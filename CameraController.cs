@@ -22,20 +22,20 @@ public class CameraController : MonoBehaviour
 
     void FollowTarget()
     {
-        float yAxis = Input.GetAxis("Vertical");
-        if (Mathf.Abs(yAxis) > 0.3f)
-        {
-            verticalExtra = Mathf.Clamp(Mathf.MoveTowards(verticalExtra, verticalExtra + yAxis * 4, Time.deltaTime * velocity * 9), -7f, 7f);
-        }
-        else
-        {
-            verticalExtra = Mathf.MoveTowards(verticalExtra, 0, Time.deltaTime * velocity * 3);
-        }
-        mainCamera.orthographicSize = Mathf.Lerp(mainCamera.orthographicSize, cameraSize, Time.deltaTime * velocity);
+        // float yAxis = Input.GetAxis("Vertical");
+        // if (Mathf.Abs(yAxis) > 0.3f)
+        // {
+        //     verticalExtra = Mathf.Clamp(Mathf.MoveTowards(verticalExtra, verticalExtra + yAxis * 4, Time.deltaTime * velocity * 9), -7f, 7f);
+        // }
+        // else
+        // {
+        //     verticalExtra = Mathf.MoveTowards(verticalExtra, 0, Time.deltaTime * velocity * 3);
+        // }
+        //mainCamera.orthographicSize = Mathf.Lerp(mainCamera.orthographicSize, cameraSize, Time.deltaTime * velocity);
         target = playerT.position;
         transform.position = new Vector3(
-            Mathf.Lerp(transform.position.x, target.x, Time.deltaTime * velocity),
-            Mathf.Lerp(transform.position.y, target.y + verticalExtra * 2, Time.deltaTime * velocity * 2),
+            Mathf.Clamp(Mathf.Lerp(transform.position.x, target.x, Time.deltaTime * velocity), 0, 54f),
+            transform.position.y,
             transform.position.z
         );
     }
