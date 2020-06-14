@@ -13,28 +13,22 @@ public class GameManager : MonoBehaviour
 
     public LayerMask entityLayerMask;
     public LayerMask ghostLayerMask;
+    public LayerMask breakableLayerMask;
 
     public Stats cheatStats;
 
     public GameObject entityPrefab;
+    public GameObject breakingBarrelPrefab;
+
     public Transform mapEnemies;
+    public Transform mapBreakables;
 
     private void Awake()
     {
         Instance = Instance ?? this;
+        FixMapSpriteOrders();
         AddDefaultPlayer("Hyde");
-        foreach (Transform enemyT in mapEnemies)
-        {
-            string enemyName = enemyT.name;
-            Enemy enemy = new Enemy(
-                enemyT,
-                new Stats() { life = 1, strength = 1, velocity = 1 },
-                enemyName
-            );
-            enemy.Start();
-            enemies.Add(enemy);
-            enemyCounter++;
-        }
+        SpawnMapEnemies();
     }
 
     private void Update()
@@ -59,6 +53,31 @@ public class GameManager : MonoBehaviour
         enemies.Add(enemy);
     }
 
+    private void FixMapSpriteOrders()
+    {
+        foreach (Transform breakablesT in mapBreakables)
+        {
+            SpriteRenderer renderer = breakablesT.GetComponent<SpriteRenderer>();
+            renderer.sortingOrder = renderer.sortingOrder - (int)(breakablesT.position.y * 100);
+        }
+    }
+
+    private void SpawnMapEnemies()
+    {
+        foreach (Transform enemyT in mapEnemies)
+        {
+            string enemyName = enemyT.name;
+            Enemy enemy = new Enemy(
+                enemyT,
+                new Stats() { life = 1, strength = 1, velocity = 1 },
+                enemyName
+            );
+            enemy.Start();
+            enemies.Add(enemy);
+            enemyCounter++;
+        }
+    }
+
     private void SetCheatStats()
     {
         player.stats = cheatStats;
@@ -68,7 +87,7 @@ public class GameManager : MonoBehaviour
     {
         Player newPlayer = new Player(
             playerTransform,
-            new Stats() { life = 1, strength = 1, velocity = 1 },
+            new Stats() { life = 1, strength = 1, velocity = 2 },
             playerName
         );
         player = newPlayer;
@@ -78,7 +97,7 @@ public class GameManager : MonoBehaviour
 
     private void Controls()
     {
-        if (Input.GetKeyDown(KeyCode.Mouse0)) player.Attack();
+        if (Input.GetButtonDown("Attack")) player.Attack();
         else if (Mathf.Abs(Input.GetAxis("Horizontal")) > 0.0f || Mathf.Abs(Input.GetAxis("Vertical")) > 0.0f)
             player?.MoveToDirection(new Vector2(Input.GetAxis("Horizontal"), Input.GetAxis("Vertical")));
         else player.Idle();

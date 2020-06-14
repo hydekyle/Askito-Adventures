@@ -1,6 +1,6 @@
 ﻿using System;
-using UnityEngine;
 using Assets.FantasyHeroes.Scripts;
+using UnityEngine;
 
 [Serializable]
 public struct Stats
@@ -38,6 +38,7 @@ public abstract class Entity
         armRightT = torsoT.Find("ArmR");
         legLeftT = pelvisT.Find("LegL");
         legRightT = pelvisT.Find("LegR");
+        combinedMask = 1 << LayerMask.NameToLayer("Enemy");
     }
 
     public void Update()
@@ -56,16 +57,23 @@ public abstract class Entity
         }
     }
 
+    int combinedMask;
+
     public void CastRay()
     {
-        var golpeados = Physics2D.CircleCastAll(transform.position + transform.right / 2, 0.4f, transform.right, 0.9f, GameManager.Instance.entityLayerMask);
+        var golpeados = Physics2D.CircleCastAll(transform.position + transform.right / 2, 0.4f, transform.right, 0.9f, GameManager.Instance.entityLayerMask | GameManager.Instance.breakableLayerMask);
         foreach (var go in golpeados)
         {
-            Entity enemy = GameManager.Instance.enemies.Find(e => e.name == go.transform.name);
-            if (enemy != null)
+            Vector2 hitDir = go.transform.position - transform.position;
+            if (go.transform.gameObject.layer == LayerMask.NameToLayer("Breakable"))
             {
-                Vector2 hitDir = go.transform.position - transform.position;
-                StrikeEntity(enemy, hitDir);
+                Debug.Log("Es breakable");
+                BreakBreakable(go.transform, hitDir);
+            }
+            else
+            {
+                Entity enemy = GameManager.Instance.enemies.Find(e => e.name == go.transform.name);
+                if (enemy != null) StrikeEntity(enemy, hitDir);
             }
         }
     }
@@ -83,14 +91,39 @@ public abstract class Entity
             var random = UnityEngine.Random.Range(5, 6);
             switch (random)
             {
-                case 1: Dismember(BodyLimb.ArmLeft, hitDir); break;
-                case 2: Dismember(BodyLimb.ArmRight, hitDir); break;
-                case 3: Dismember(BodyLimb.LegLeft, hitDir); break;
-                case 4: Dismember(BodyLimb.LegRight, hitDir); break;
-                default: Dismember(BodyLimb.Head, hitDir); break;
+                case 1:
+                    Dismember(BodyLimb.ArmLeft, hitDir);
+                    break;
+                case 2:
+                    Dismember(BodyLimb.ArmRight, hitDir);
+                    break;
+                case 3:
+                    Dismember(BodyLimb.LegLeft, hitDir);
+                    break;
+                case 4:
+                    Dismember(BodyLimb.LegRight, hitDir);
+                    break;
+                default:
+                    Dismember(BodyLimb.Head, hitDir);
+                    break;
             }
             Die();
         }
+    }
+
+    public void BreakBreakable(Transform breakableT, Vector2 hitDir)
+    {
+        int breakableSortingOrder = breakableT.GetComponent<SpriteRenderer>().sortingOrder;
+        var go = GameObject.Instantiate(GameManager.Instance.breakingBarrelPrefab);
+        go.transform.position = breakableT.position;
+        GameObject.Destroy(breakableT.gameObject);
+        go.gameObject.SetActive(true);
+        Transform pieceTop = go.transform.GetChild(0);
+        Transform pieceBot = go.transform.GetChild(1);
+        pieceTop.GetComponent<SpriteRenderer>().sortingOrder = pieceBot.GetComponent<SpriteRenderer>().sortingOrder = breakableSortingOrder;
+        pieceTop.GetComponent<Rigidbody2D>().AddForce((hitDir * 8 + Vector2.up * 6) * stats.strength * 40, ForceMode2D.Force);
+        pieceBot.GetComponent<Rigidbody2D>().AddForce((hitDir * 5 + Vector2.up) * stats.strength * 30, ForceMode2D.Force);
+        GameObject.Destroy(go, 3f);
     }
 
     public void Die()
@@ -110,12 +143,24 @@ public abstract class Entity
         Transform limbT;
         switch (limb)
         {
-            case BodyLimb.Head: limbT = headT; break;
-            case BodyLimb.ArmRight: limbT = armRightT; break;
-            case BodyLimb.ArmLeft: limbT = armLeftT; break;
-            case BodyLimb.LegLeft: limbT = legLeftT; break;
-            case BodyLimb.LegRight: limbT = legRightT; break;
-            default: limbT = null; break;
+            case BodyLimb.Head:
+                limbT = headT;
+                break;
+            case BodyLimb.ArmRight:
+                limbT = armRightT;
+                break;
+            case BodyLimb.ArmLeft:
+                limbT = armLeftT;
+                break;
+            case BodyLimb.LegLeft:
+                limbT = legLeftT;
+                break;
+            case BodyLimb.LegRight:
+                limbT = legRightT;
+                break;
+            default:
+                limbT = null;
+                break;
         }
         GameObject newGO = GameObject.Instantiate(limbT.gameObject);
         Transform newT = newGO.transform;
@@ -141,20 +186,16 @@ public abstract class Entity
         GameObject.Destroy(limb.gameObject, 2.5f);
     }
 
-    public void SetVelocity(int newVelocity)
+    public void SetAnimVelocity(int newVelocity)
     {
-        stats = new Stats()
-        {
-            life = stats.life,
-            strength = stats.strength,
-            velocity = newVelocity
-        };
         Dummy.Animator.speed = newVelocity;
         AttackAnimator.speed = newVelocity;
     }
 
     public void PlayAnim(string clipName)
     {
+        if (clipName == "Alert") SetAnimVelocity(1);
+        else SetAnimVelocity(2);
         Dummy.Animator.StopPlayback();
         Dummy.Animator.Play(ResolveAnimationClip(clipName));
     }
@@ -173,18 +214,26 @@ public abstract class Entity
                 {
                     case WeaponType.Melee1H:
                     case WeaponType.MeleeTween:
-                    case WeaponType.Bow: return "Alert1H";
-                    case WeaponType.Melee2H: return "Alert2H";
-                    default: throw new NotImplementedException();
+                    case WeaponType.Bow:
+                        return "Alert1H";
+                    case WeaponType.Melee2H:
+                        return "Alert2H";
+                    default:
+                        throw new NotImplementedException();
                 }
             case "Attack":
                 switch (Dummy.WeaponType)
                 {
-                    case WeaponType.Melee1H: return "Attack1H";
-                    case WeaponType.Melee2H: return "Attack2H";
-                    case WeaponType.MeleeTween: return "AttackTween";
-                    case WeaponType.Bow: return "Shot";
-                    default: throw new NotImplementedException();
+                    case WeaponType.Melee1H:
+                        return "Attack1H";
+                    case WeaponType.Melee2H:
+                        return "Attack2H";
+                    case WeaponType.MeleeTween:
+                        return "AttackTween";
+                    case WeaponType.Bow:
+                        return "Shot";
+                    default:
+                        throw new NotImplementedException();
                 }
             case "AttackLunge":
                 switch (Dummy.WeaponType)
@@ -192,8 +241,10 @@ public abstract class Entity
                     case WeaponType.Melee1H:
                     case WeaponType.Melee2H:
                     case WeaponType.MeleeTween:
-                    case WeaponType.Bow: return "AttackLunge1H";
-                    default: throw new NotImplementedException();
+                    case WeaponType.Bow:
+                        return "AttackLunge1H";
+                    default:
+                        throw new NotImplementedException();
                 }
             case "Cast":
                 switch (Dummy.WeaponType)
@@ -201,10 +252,13 @@ public abstract class Entity
                     case WeaponType.Melee1H:
                     case WeaponType.Melee2H:
                     case WeaponType.MeleeTween:
-                    case WeaponType.Bow: return "Cast1H";
-                    default: throw new NotImplementedException();
+                    case WeaponType.Bow:
+                        return "Cast1H";
+                    default:
+                        throw new NotImplementedException();
                 }
-            default: return clipName;
+            default:
+                return clipName;
         }
     }
 
@@ -217,7 +271,7 @@ public abstract class Entity
                 GetActualPosition(),
                 GetActualPosition() + direction * 2,
                 Time.deltaTime * stats.velocity
-             );
+            );
 
             if (Mathf.Abs(direction.x) > 0.0f)
             {
@@ -270,7 +324,7 @@ public class Player : Entity
         this.Dummy = transform.GetComponent<Character>();
         this.AttackAnimator = transform.Find("Attack_Effect").GetComponent<Animator>();
         this.rigidbody = transform.GetComponent<Rigidbody2D>();
-        this.SetVelocity(2);
+        this.SetAnimVelocity(2);
     }
 }
 
