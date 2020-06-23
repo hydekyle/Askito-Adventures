@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 public class GameManager : MonoBehaviour
@@ -28,7 +29,7 @@ public class GameManager : MonoBehaviour
         Instance = Instance ?? this;
         FixMapSpriteOrders();
         AddDefaultPlayer("Hyde");
-        SpawnMapEnemies();
+        GenerateMapEnemies();
     }
 
     private void Update()
@@ -62,7 +63,7 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    private void SpawnMapEnemies()
+    private void GenerateMapEnemies()
     {
         foreach (Transform enemyT in mapEnemies)
         {
@@ -95,6 +96,11 @@ public class GameManager : MonoBehaviour
         //entities.Add(player);
     }
 
+    private void RandomEnemyAttack()
+    {
+        enemies[UnityEngine.Random.Range(0, enemies.Count)].Attack();
+    }
+
     private void Controls()
     {
         if (Input.GetButtonDown("Attack")) player.Attack();
@@ -104,6 +110,7 @@ public class GameManager : MonoBehaviour
 
         if (Input.GetKeyDown(KeyCode.F1)) SetCheatStats();
         if (Input.GetKeyDown(KeyCode.F2)) SpawnEnemyRandom();
+        if (Input.GetKeyDown(KeyCode.F3)) RandomEnemyAttack();
 
         // if (Input.GetKey(KeyCode.Mouse1)) player?.SetVelocity(2);
         // else player?.SetVelocity(1);
