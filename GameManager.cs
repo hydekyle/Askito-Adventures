@@ -8,13 +8,13 @@ public class GameManager : MonoBehaviour
 
     public Player player;
     [SerializeField]
-    public List<Enemy> enemies = new List<Enemy>();
+    public List<Entity> enemies = new List<Entity>();
 
     public Transform playerTransform;
 
-    public LayerMask entityLayerMask;
-    public LayerMask ghostLayerMask;
-    public LayerMask breakableLayerMask;
+    public static LayerMask enemyLayerMask;
+    public static LayerMask ghostLayerMask;
+    public static LayerMask breakableLayerMask;
 
     public Stats cheatStats;
 
@@ -23,12 +23,13 @@ public class GameManager : MonoBehaviour
 
     public Transform mapEnemies;
     public Transform mapBreakables;
+    public GameObject bombPrefab;
 
     private void Awake()
     {
         Instance = Instance ?? this;
         FixMapSpriteOrders();
-        AddDefaultPlayer("Hyde");
+        AddDefaultPlayer("Player");
         GenerateMapEnemies();
     }
 
@@ -111,8 +112,24 @@ public class GameManager : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.F1)) SetCheatStats();
         if (Input.GetKeyDown(KeyCode.F2)) SpawnEnemyRandom();
         if (Input.GetKeyDown(KeyCode.F3)) RandomEnemyAttack();
+        if (Input.GetKeyDown(KeyCode.Mouse1)) player.ThrowBomb();
 
         // if (Input.GetKey(KeyCode.Mouse1)) player?.SetVelocity(2);
         // else player?.SetVelocity(1);
+    }
+
+    public static void BreakBreakable(Transform breakableT, Vector2 hitDir)
+    {
+        int breakableSortingOrder = breakableT.GetComponent<SpriteRenderer>().sortingOrder;
+        var go = GameObject.Instantiate(GameManager.Instance.breakingBarrelPrefab);
+        go.transform.position = breakableT.position;
+        GameObject.Destroy(breakableT.gameObject);
+        go.gameObject.SetActive(true);
+        Transform pieceTop = go.transform.GetChild(0);
+        Transform pieceBot = go.transform.GetChild(1);
+        pieceTop.GetComponent<SpriteRenderer>().sortingOrder = pieceBot.GetComponent<SpriteRenderer>().sortingOrder = breakableSortingOrder;
+        pieceTop.GetComponent<Rigidbody2D>().AddForce((hitDir * 8 + Vector2.up * 6) * 40, ForceMode2D.Force);
+        pieceBot.GetComponent<Rigidbody2D>().AddForce((hitDir * 5 + Vector2.up) * 30, ForceMode2D.Force);
+        GameObject.Destroy(go, 3f);
     }
 }

@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System.ComponentModel;
+using System.Linq;
 using System;
 using Assets.FantasyHeroes.Scripts;
 using UnityEngine;
@@ -28,6 +29,8 @@ public abstract class Entity
     BoxCollider2D triggerCollider;
     BoxCollider2D rigidCollider;
 
+    public LayerMask enemyMask;
+
     public void Start()
     {
         Transform pelvisT = transform.Find("Animation").Find("Pelvis");
@@ -39,14 +42,7 @@ public abstract class Entity
         armRightT = torsoT.Find("ArmR");
         legLeftT = pelvisT.Find("LegL");
         legRightT = pelvisT.Find("LegR");
-        combinedMask = 1 << LayerMask.NameToLayer("Enemy");
 
-        // var animClip = Dummy.Animator.runtimeAnimatorController.animationClips.ToList().Find(clip => clip.name == ResolveAnimationClip("Attack"));
-        // AnimationEvent newEvent = new AnimationEvent();
-        // newEvent.stringParameter = "Pooolla";
-        // animClip.AddEvent(newEvent);
-        // Debug.Log(animClip.events.Length);
-        //animClip.events.ElementAt(0).stringParameter = "Pooolla";
     }
 
     public void Update()
@@ -65,59 +61,40 @@ public abstract class Entity
         }
     }
 
-    public void BreakBreakable(Transform breakableT, Vector2 hitDir)
+    public void CastAttack()
     {
-        int breakableSortingOrder = breakableT.GetComponent<SpriteRenderer>().sortingOrder;
-        var go = GameObject.Instantiate(GameManager.Instance.breakingBarrelPrefab);
-        go.transform.position = breakableT.position;
-        GameObject.Destroy(breakableT.gameObject);
-        go.gameObject.SetActive(true);
-        Transform pieceTop = go.transform.GetChild(0);
-        Transform pieceBot = go.transform.GetChild(1);
-        pieceTop.GetComponent<SpriteRenderer>().sortingOrder = pieceBot.GetComponent<SpriteRenderer>().sortingOrder = breakableSortingOrder;
-        pieceTop.GetComponent<Rigidbody2D>().AddForce((hitDir * 8 + Vector2.up * 6) * stats.strength * 40, ForceMode2D.Force);
-        pieceBot.GetComponent<Rigidbody2D>().AddForce((hitDir * 5 + Vector2.up) * stats.strength * 30, ForceMode2D.Force);
-        GameObject.Destroy(go, 3f);
-    }
-
-    int combinedMask;
-
-    public void CastRay()
-    {
-        var golpeados = Physics2D.CircleCastAll(transform.position + transform.right / 2, 0.4f, transform.right, 0.9f, GameManager.Instance.entityLayerMask | GameManager.Instance.breakableLayerMask);
-        foreach (var go in golpeados)
+        var raycastHit = Physics2D.CircleCastAll(transform.position + transform.right / 2, 0.4f, transform.right, 0.9f);
+        foreach (var hit in raycastHit)
         {
-            Vector2 hitDir = go.transform.position - transform.position;
-            if (go.transform.gameObject.layer == LayerMask.NameToLayer("Breakable"))
+            LayerMask hitLayer = hit.transform.gameObject.layer;
+            Vector2 hitDir = (hit.transform.position - transform.position).normalized;
+
+            if (hitLayer == LayerMask.NameToLayer("Breakable"))
             {
-                BreakBreakable(go.transform, hitDir);
+                GameManager.BreakBreakable(hit.transform, hitDir);
             }
-            else
+            else if (hitLayer == enemyMask)
             {
-                Entity enemy = GameManager.Instance.enemies.Find(e => e.name == go.transform.name);
-                if (enemy != null) StrikeEntity(enemy, hitDir);
+                if (this.GetType() == typeof(Player))
+                {
+                    Entity enemy = GameManager.Instance.enemies.Find(e => e.name == hit.transform.name);
+                    if (enemy != null) StrikeEntity(enemy, hitDir);
+                }
+                else
+                {
+                    StrikeEntity(GameManager.Instance.player, hitDir);
+                }
             }
+            else if (hitLayer == LayerMask.NameToLayer("Movible"))
+            {
+                float distance = Vector2.Distance(transform.position, hit.transform.position);
+                hit.transform.GetComponent<Rigidbody2D>()?.AddForce(hitDir * 200 * stats.strength / Mathf.Pow(distance, 3), ForceMode2D.Impulse);
+            }
+
         }
     }
 
-    public void GetStrike(int force, Vector2 hitDir)
-    {
-        rigidbody.AddForce(hitDir.normalized * force, ForceMode2D.Impulse);
-        health -= force;
-        if (health > 0)
-        {
-            // No muero   
-        }
-        else
-        {
-            Dismember(BodyLimb.ArmLeft, hitDir);
-            Dismember(BodyLimb.ArmRight, hitDir);
-            Dismember(BodyLimb.LegLeft, hitDir);
-            Dismember(BodyLimb.LegRight, hitDir);
-            Dismember(BodyLimb.Head, hitDir);
-            Die();
-        }
-    }
+    public abstract void GetStrike(int strikeForce, Vector2 hitDir);
 
     public void Die()
     {
@@ -126,9 +103,19 @@ public abstract class Entity
         PlayAnim("Die");
     }
 
-    public void Exposion()
+    public void ThrowBomb()
     {
-        //Dismember(BodyLimb.Head, hitDir + new Vector2(UnityEngine.Random.Range()))
+        GameObject.Instantiate(GameManager.Instance.bombPrefab, transform.position, transform.rotation);
+    }
+
+    public void Burst(Vector2 hitDir)
+    {
+        Dismember(BodyLimb.ArmLeft, hitDir);
+        Dismember(BodyLimb.ArmRight, hitDir);
+        Dismember(BodyLimb.LegLeft, hitDir);
+        Dismember(BodyLimb.LegRight, hitDir);
+        Dismember(BodyLimb.Head, hitDir);
+        Die();
     }
 
     public void Dismember(BodyLimb limb, Vector2 hitDir)
@@ -152,7 +139,7 @@ public abstract class Entity
                 oldLimb = legRightT;
                 break;
             default:
-                oldLimb = null;
+                oldLimb = headT;
                 break;
         }
         GameObject newGO = GameObject.Instantiate(oldLimb.gameObject);
@@ -198,6 +185,7 @@ public abstract class Entity
 
     public void CleanMyself(Transform limb)
     {
+        GameManager.Instance.enemies.Remove(this);
         GameObject.Destroy(transform.gameObject, 2.5f);
         GameObject.Destroy(limb.gameObject, 2.5f);
     }
@@ -341,6 +329,21 @@ public class Player : Entity
         this.AttackAnimator = transform.Find("Attack_Effect").GetComponent<Animator>();
         this.rigidbody = transform.GetComponent<Rigidbody2D>();
         this.SetAnimVelocity(2);
+        this.enemyMask = LayerMask.NameToLayer("Enemy");
+    }
+
+    public override void GetStrike(int strikeForce, Vector2 hitDir)
+    {
+        rigidbody.AddForce(hitDir.normalized * strikeForce, ForceMode2D.Impulse);
+        health -= strikeForce;
+        if (health > 0)
+        {
+            Debug.Log("Me hacen pupa");
+        }
+        else
+        {
+            Debug.Log("Legends never die");
+        }
     }
 }
 
@@ -355,5 +358,21 @@ public class Enemy : Entity
         this.Dummy = transform.GetComponent<Character>();
         this.AttackAnimator = transform.Find("Attack_Effect").GetComponent<Animator>();
         this.rigidbody = transform.GetComponent<Rigidbody2D>();
+        this.SetAnimVelocity(1);
+        this.enemyMask = LayerMask.NameToLayer("Player");
+    }
+
+    public override void GetStrike(int strikeForce, Vector2 hitDir)
+    {
+        rigidbody.AddForce(hitDir.normalized * strikeForce, ForceMode2D.Impulse);
+        health -= strikeForce;
+        if (health > 0)
+        {
+            // No muero
+        }
+        else
+        {
+            Burst(hitDir);
+        }
     }
 }

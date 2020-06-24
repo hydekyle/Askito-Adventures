@@ -4,15 +4,18 @@ using UnityEngine;
 
 public class Dev : MonoBehaviour
 {
-    Player player;
+    Entity myself;
 
     private void Start()
     {
-        player = GameManager.Instance.player;
+        var myName = transform.parent.name;
+        if (myName == "Player") myself = GameManager.Instance.player;
+        else myself = GameManager.Instance.enemies.Find(enemy => enemy.name == myName);
     }
 
     public void Attack()
     {
-        player.CastRay();
+        myself.CastAttack();
     }
+
 }
