@@ -15,21 +15,22 @@ public enum BodyLimb { Head, LegLeft, LegRight, ArmLeft, ArmRight }
 [Serializable]
 public abstract class Entity
 {
-    public string name;
-    public int health = 9;
     public Character Dummy;
     public Transform transform;
     public Stats stats;
-    public float lastTimeAttack = 0f;
-    public float attackCD = 0.1f;
     public Animator AttackAnimator;
     public Rigidbody2D rigidbody;
+    public LayerMask enemyMask;
+    public string name;
+    public int health = 9;
+    public float lastTimeAttack = 0f;
+    public float attackCD = 0.3f;
 
     Transform headT, armLeftT, armRightT, legLeftT, legRightT;
     BoxCollider2D triggerCollider;
     BoxCollider2D rigidCollider;
 
-    public LayerMask enemyMask;
+    public abstract void GetStrike(int strikeForce, Vector2 hitDir);
 
     public void Start()
     {
@@ -54,7 +55,7 @@ public abstract class Entity
     {
         if (IsAttackAvailable())
         {
-            CameraController.Instance.ZoomOption(ZoomOptions.Focus);
+            //CameraController.Instance.ZoomOption(ZoomOptions.Focus);
             lastTimeAttack = Time.time;
             PlayAnim("Attack");
             SlashAnim();
@@ -93,8 +94,6 @@ public abstract class Entity
 
         }
     }
-
-    public abstract void GetStrike(int strikeForce, Vector2 hitDir);
 
     public void Die()
     {
@@ -185,7 +184,7 @@ public abstract class Entity
 
     public void CleanMyself(Transform limb)
     {
-        GameManager.Instance.enemies.Remove(this);
+        GameManager.RemoveEntity(this);
         GameObject.Destroy(transform.gameObject, 2.5f);
         GameObject.Destroy(limb.gameObject, 2.5f);
     }
@@ -201,7 +200,7 @@ public abstract class Entity
         if (clipName == "Alert") SetAnimVelocity(1);
         else SetAnimVelocity(2);
         Dummy.Animator.StopPlayback();
-        Dummy.Animator.Play(ResolveAnimationClip(clipName));
+        Dummy.Animator.Play(GameManager.GetAnimationName(clipName, Dummy.WeaponType));
     }
 
     public void SlashAnim()
@@ -235,7 +234,7 @@ public abstract class Entity
 
     bool IsPlayerAttacking()
     {
-        return Dummy.Animator.GetCurrentAnimatorStateInfo(0).IsName(ResolveAnimationClip("Attack"));
+        return Dummy.Animator.GetCurrentAnimatorStateInfo(0).IsName(GameManager.GetAnimationName("Attack", Dummy.WeaponType));
     }
 
     public void Idle()
@@ -259,62 +258,6 @@ public abstract class Entity
         return new Vector2(transform.position.x, transform.position.y);
     }
 
-    private string ResolveAnimationClip(string clipName)
-    {
-        switch (clipName)
-        {
-            case "Alert":
-                switch (Dummy.WeaponType)
-                {
-                    case WeaponType.Melee1H:
-                    case WeaponType.MeleeTween:
-                    case WeaponType.Bow:
-                        return "Alert1H";
-                    case WeaponType.Melee2H:
-                        return "Alert2H";
-                    default:
-                        throw new NotImplementedException();
-                }
-            case "Attack":
-                switch (Dummy.WeaponType)
-                {
-                    case WeaponType.Melee1H:
-                        return "Attack1H";
-                    case WeaponType.Melee2H:
-                        return "Attack2H";
-                    case WeaponType.MeleeTween:
-                        return "AttackTween";
-                    case WeaponType.Bow:
-                        return "Shot";
-                    default:
-                        throw new NotImplementedException();
-                }
-            case "AttackLunge":
-                switch (Dummy.WeaponType)
-                {
-                    case WeaponType.Melee1H:
-                    case WeaponType.Melee2H:
-                    case WeaponType.MeleeTween:
-                    case WeaponType.Bow:
-                        return "AttackLunge1H";
-                    default:
-                        throw new NotImplementedException();
-                }
-            case "Cast":
-                switch (Dummy.WeaponType)
-                {
-                    case WeaponType.Melee1H:
-                    case WeaponType.Melee2H:
-                    case WeaponType.MeleeTween:
-                    case WeaponType.Bow:
-                        return "Cast1H";
-                    default:
-                        throw new NotImplementedException();
-                }
-            default:
-                return clipName;
-        }
-    }
 }
 
 [Serializable]

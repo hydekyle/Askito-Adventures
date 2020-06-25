@@ -1,14 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
+using Assets.FantasyHeroes.Scripts;
 
 public class GameManager : MonoBehaviour
 {
     public static GameManager Instance;
 
-    public Player player;
-    [SerializeField]
     public List<Entity> enemies = new List<Entity>();
+    public Player player;
 
     public Transform playerTransform;
 
@@ -25,6 +25,8 @@ public class GameManager : MonoBehaviour
     public Transform mapBreakables;
     public GameObject bombPrefab;
 
+    int enemyCounter = 0;
+
     private void Awake()
     {
         Instance = Instance ?? this;
@@ -38,8 +40,6 @@ public class GameManager : MonoBehaviour
         Controls();
         foreach (Entity entity in enemies) entity.Update();
     }
-
-    int enemyCounter = 0;
 
     public void SpawnEnemyRandom()
     {
@@ -132,4 +132,70 @@ public class GameManager : MonoBehaviour
         pieceBot.GetComponent<Rigidbody2D>().AddForce((hitDir * 5 + Vector2.up) * 30, ForceMode2D.Force);
         GameObject.Destroy(go, 3f);
     }
+
+    public static void RemoveEntity(Entity entity)
+    {
+        if (entity.GetType() == typeof(Enemy)) GameManager.Instance.enemies.Remove(entity);
+        else Debug.Log("Se muere el player?");
+    }
+
+    public static string GetAnimationName(string clipName, WeaponType weaponType)
+    {
+        switch (clipName)
+        {
+            case "Alert":
+                switch (weaponType)
+                {
+                    case WeaponType.Melee1H:
+                    case WeaponType.MeleeTween:
+                    case WeaponType.Bow:
+                        return "Alert1H";
+                    case WeaponType.Melee2H:
+                        return "Alert2H";
+                    default:
+                        throw new NotImplementedException();
+                }
+            case "Attack":
+                switch (weaponType)
+                {
+                    case WeaponType.Melee1H:
+                        return "Attack1H";
+                    case WeaponType.Melee2H:
+                        return "Attack2H";
+                    case WeaponType.MeleeTween:
+                        return "AttackTween";
+                    case WeaponType.Bow:
+                        return "Shot";
+                    default:
+                        throw new NotImplementedException();
+                }
+            case "AttackLunge":
+                switch (weaponType)
+                {
+                    case WeaponType.Melee1H:
+                    case WeaponType.Melee2H:
+                    case WeaponType.MeleeTween:
+                    case WeaponType.Bow:
+                        return "AttackLunge1H";
+                    default:
+                        throw new NotImplementedException();
+                }
+            case "Cast":
+                switch (weaponType)
+                {
+                    case WeaponType.Melee1H:
+                    case WeaponType.Melee2H:
+                    case WeaponType.MeleeTween:
+                    case WeaponType.Bow:
+                        return "Cast1H";
+                    default:
+                        throw new NotImplementedException();
+                }
+            default:
+                return clipName;
+        }
+    }
+
 }
+
+
