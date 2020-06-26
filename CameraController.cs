@@ -12,6 +12,7 @@ public class CameraController : MonoBehaviour
     public Material backgroundMaterial;
     public Material backgroundFarMaterial;
     public float velocity = 1f;
+    public float backDistanceMax = 5f;
 
     Camera mainCamera;
     Vector3 target;
@@ -40,7 +41,7 @@ public class CameraController : MonoBehaviour
         target = playerT.position;
         transform.position = new Vector3(
             Mathf.Lerp(
-                Mathf.Clamp(transform.position.x, minPosX - 3.3f, Mathf.Infinity),
+                Mathf.Clamp(transform.position.x, minPosX - backDistanceMax, Mathf.Infinity),
                 target.x,
                 Time.deltaTime * velocity
                 ),
