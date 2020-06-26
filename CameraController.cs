@@ -7,14 +7,16 @@ public enum ZoomOptions { Focus, Normal, Far }
 public class CameraController : MonoBehaviour
 {
     public static CameraController Instance;
+
     public Transform playerT;
-    Vector3 target;
-    public float velocity = 1f;
-    Camera mainCamera;
-    int cameraSize = 27;
-    float verticalExtra = 0;
     public Material backgroundMaterial;
     public Material backgroundFarMaterial;
+    public float velocity = 1f;
+
+    Camera mainCamera;
+    Vector3 target;
+    int cameraSize = 27;
+    float minPosX;
 
     private void Awake()
     {
@@ -22,23 +24,43 @@ public class CameraController : MonoBehaviour
         mainCamera = Camera.main;
     }
 
-    void FollowTarget()
+    private void Start()
     {
-        target = playerT.position;
-        transform.position = new Vector3(
-            Mathf.Clamp(Mathf.Lerp(transform.position.x, target.x, Time.deltaTime * velocity), 0, 54f),
-            transform.position.y,
-            transform.position.z
-        );
-        Vector2 backgroundOffset = backgroundMaterial.mainTextureOffset;
-        Vector2 backgroundFarOffset = backgroundFarMaterial.mainTextureOffset;
-        backgroundMaterial.SetTextureOffset("_MainTex", new Vector2(transform.position.x / 200f, 0));
-        backgroundFarMaterial.SetTextureOffset("_MainTex", new Vector2(transform.position.x / 600f, 0));
+        minPosX = playerT.position.x;
     }
 
     private void Update()
     {
+        UpdateClampValue();
         FollowTarget();
+    }
+
+    private void FollowTarget()
+    {
+        target = playerT.position;
+        transform.position = new Vector3(
+            Mathf.Lerp(
+                Mathf.Clamp(transform.position.x, minPosX - 3.3f, Mathf.Infinity),
+                target.x,
+                Time.deltaTime * velocity
+                ),
+            transform.position.y,
+            transform.position.z
+        );
+        MoveBackground();
+    }
+
+    private void UpdateClampValue()
+    {
+        if (minPosX < playerT.position.x) minPosX = playerT.position.x;
+    }
+
+    private void MoveBackground()
+    {
+        Vector2 backgroundOffset = backgroundMaterial.mainTextureOffset;
+        Vector2 backgroundFarOffset = backgroundFarMaterial.mainTextureOffset;
+        backgroundMaterial.SetTextureOffset("_MainTex", new Vector2(transform.position.x / 350f, 0));
+        backgroundFarMaterial.SetTextureOffset("_MainTex", new Vector2(transform.position.x / 700f, 0));
     }
 
     public void ZoomOption(ZoomOptions zoomMode)

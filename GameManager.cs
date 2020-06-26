@@ -25,6 +25,7 @@ public class GameManager : MonoBehaviour
     public Transform mapBreakables;
     public GameObject bombPrefab;
 
+
     int enemyCounter = 0;
 
     private void Awake()
@@ -195,6 +196,8 @@ public class GameManager : MonoBehaviour
                 return clipName;
         }
     }
+
+
 
 }
 
