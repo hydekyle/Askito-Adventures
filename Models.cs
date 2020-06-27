@@ -1,6 +1,6 @@
-﻿using System.ComponentModel;
+﻿using System;
+using System.ComponentModel;
 using System.Linq;
-using System;
 using Assets.FantasyHeroes.Scripts;
 using UnityEngine;
 
@@ -46,10 +46,7 @@ public abstract class Entity
 
     }
 
-    public void Update()
-    {
-
-    }
+    public abstract void Update();
 
     public void Attack()
     {
@@ -78,7 +75,7 @@ public abstract class Entity
             {
                 if (this.GetType() == typeof(Player))
                 {
-                    Entity enemy = GameManager.Instance.enemies.Find(e => e.name == hit.transform.name);
+                    Entity enemy = GameManager.Instance.GetEnemyByName(hit.transform.name);
                     if (enemy != null) StrikeEntity(enemy, hitDir);
                 }
                 else
@@ -275,6 +272,14 @@ public class Player : Entity
         this.enemyMask = LayerMask.NameToLayer("Enemy");
     }
 
+    public override void Update()
+    {
+        transform.position = new Vector2(
+            Mathf.Clamp(transform.position.x, CameraController.Instance.maxPlayerDistanceLeft, CameraController.Instance.maxPlayerDistanceRight),
+            Mathf.Clamp(transform.position.y, -2.77f, 1f)
+        );
+    }
+
     public override void GetStrike(int strikeForce, Vector2 hitDir)
     {
         rigidbody.AddForce(hitDir.normalized * strikeForce, ForceMode2D.Impulse);
@@ -303,6 +308,14 @@ public class Enemy : Entity
         this.rigidbody = transform.GetComponent<Rigidbody2D>();
         this.SetAnimVelocity(1);
         this.enemyMask = LayerMask.NameToLayer("Player");
+    }
+
+    public override void Update()
+    {
+        transform.position = new Vector2(
+            transform.position.x,
+            Mathf.Clamp(transform.position.y, -2.77f, 1f)
+        );
     }
 
     public override void GetStrike(int strikeForce, Vector2 hitDir)

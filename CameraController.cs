@@ -14,6 +14,9 @@ public class CameraController : MonoBehaviour
     public float velocity = 1f;
     public float backDistanceMax = 5f;
 
+    public float maxPlayerDistanceLeft;
+    public float maxPlayerDistanceRight;
+
     Camera mainCamera;
     Vector3 target;
     int cameraSize = 27;
@@ -32,7 +35,7 @@ public class CameraController : MonoBehaviour
 
     private void Update()
     {
-        UpdateClampValue();
+        UpdateCameraClampValue();
         FollowTarget();
     }
 
@@ -51,9 +54,11 @@ public class CameraController : MonoBehaviour
         MoveBackground();
     }
 
-    private void UpdateClampValue()
+    private void UpdateCameraClampValue()
     {
         if (minPosX < playerT.position.x) minPosX = playerT.position.x;
+        maxPlayerDistanceLeft = mainCamera.ViewportToWorldPoint(new Vector3(mainCamera.rect.xMin, 0, 0)).x;
+        maxPlayerDistanceRight = mainCamera.ViewportToWorldPoint(new Vector3(mainCamera.rect.xMax, 0, 0)).x;
     }
 
     private void MoveBackground()

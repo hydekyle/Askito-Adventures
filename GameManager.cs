@@ -1,4 +1,5 @@
-﻿using System;
+﻿using System.Net.NetworkInformation;
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 using Assets.FantasyHeroes.Scripts;
@@ -25,7 +26,6 @@ public class GameManager : MonoBehaviour
     public Transform mapBreakables;
     public GameObject bombPrefab;
 
-
     int enemyCounter = 0;
 
     private void Awake()
@@ -39,6 +39,7 @@ public class GameManager : MonoBehaviour
     private void Update()
     {
         Controls();
+        player.Update();
         foreach (Entity entity in enemies) entity.Update();
     }
 
@@ -197,7 +198,10 @@ public class GameManager : MonoBehaviour
         }
     }
 
-
+    public Entity GetEnemyByName(string name)
+    {
+        return enemies.Find(e => e.name == name);
+    }
 
 }
 
