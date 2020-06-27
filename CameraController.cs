@@ -15,7 +15,7 @@ public class CameraController : MonoBehaviour
     public float backDistanceMax = 5f;
 
     public float maxPlayerDistanceLeft;
-    public float maxPlayerDistanceRight;
+    //public float maxPlayerDistanceRight;
 
     Camera mainCamera;
     Vector3 target;
@@ -44,8 +44,8 @@ public class CameraController : MonoBehaviour
         target = playerT.position;
         transform.position = new Vector3(
             Mathf.Lerp(
-                Mathf.Clamp(transform.position.x, minPosX - backDistanceMax, Mathf.Infinity),
-                target.x,
+                transform.position.x,
+                Mathf.Clamp(target.x, minPosX - backDistanceMax, Mathf.Infinity),
                 Time.deltaTime * velocity
                 ),
             transform.position.y,
@@ -58,7 +58,7 @@ public class CameraController : MonoBehaviour
     {
         if (minPosX < playerT.position.x) minPosX = playerT.position.x;
         maxPlayerDistanceLeft = mainCamera.ViewportToWorldPoint(new Vector3(mainCamera.rect.xMin, 0, 0)).x;
-        maxPlayerDistanceRight = mainCamera.ViewportToWorldPoint(new Vector3(mainCamera.rect.xMax, 0, 0)).x;
+        //maxPlayerDistanceRight = mainCamera.ViewportToWorldPoint(new Vector3(mainCamera.rect.xMax, 0, 0)).x;
     }
 
     private void MoveBackground()

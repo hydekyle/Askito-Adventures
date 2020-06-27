@@ -25,6 +25,7 @@ public abstract class Entity
     public int health = 9;
     public float lastTimeAttack = 0f;
     public float attackCD = 0.3f;
+    public bool isActive = false;
 
     Transform headT, armLeftT, armRightT, legLeftT, legRightT;
     BoxCollider2D triggerCollider;
@@ -239,6 +240,14 @@ public abstract class Entity
         if (!IsPlayerAttacking() && IsAttackAvailable()) PlayAnim("Alert");
     }
 
+    public void ClampMyself(bool clampX, bool clampY)
+    {
+        transform.position = new Vector2(
+            clampX ? Mathf.Clamp(transform.position.x, CameraController.Instance.maxPlayerDistanceLeft, Mathf.Infinity) : transform.position.x,
+            clampY ? Mathf.Clamp(transform.position.y, -2.77f, 1f) : transform.position.y // HardCoded map boundaries :D
+        );
+    }
+
     private void SetOrientation(float directionX)
     {
         bool facingRight = directionX > 0 ? true : false;
@@ -270,14 +279,12 @@ public class Player : Entity
         this.rigidbody = transform.GetComponent<Rigidbody2D>();
         this.SetAnimVelocity(2);
         this.enemyMask = LayerMask.NameToLayer("Enemy");
+        this.isActive = true;
     }
 
     public override void Update()
     {
-        transform.position = new Vector2(
-            Mathf.Clamp(transform.position.x, CameraController.Instance.maxPlayerDistanceLeft, CameraController.Instance.maxPlayerDistanceRight),
-            Mathf.Clamp(transform.position.y, -2.77f, 1f)
-        );
+        if (isActive) ClampMyself(true, true);
     }
 
     public override void GetStrike(int strikeForce, Vector2 hitDir)
@@ -312,10 +319,7 @@ public class Enemy : Entity
 
     public override void Update()
     {
-        transform.position = new Vector2(
-            transform.position.x,
-            Mathf.Clamp(transform.position.y, -2.77f, 1f)
-        );
+        ClampMyself(false, true);
     }
 
     public override void GetStrike(int strikeForce, Vector2 hitDir)
