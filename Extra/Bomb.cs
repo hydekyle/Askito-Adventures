@@ -4,6 +4,8 @@ using UnityEngine;
 
 public class Bomb : MonoBehaviour
 {
+    public GameObject explosionPrefab;
+
     Vector3 startPosition;
     Vector3 destinyPosition;
     float startTime;
@@ -18,6 +20,7 @@ public class Bomb : MonoBehaviour
 
     public void Explode()
     {
+        Instantiate(explosionPrefab, transform.position, transform.rotation);
         float radius = 6.66f;
         var hits = Physics2D.CircleCastAll(transform.position, radius, Vector2.zero);
         foreach (var hit in hits)

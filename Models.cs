@@ -49,15 +49,20 @@ public abstract class Entity
 
     public abstract void Update();
 
-    public void Attack()
+    public void Attack(Vector2 attackDir)
     {
         if (IsAttackAvailable())
         {
-            //CameraController.Instance.ZoomOption(ZoomOptions.Focus);
+            rigidbody.AddForce(attackDir.normalized * 5, ForceMode2D.Impulse);
             lastTimeAttack = Time.time;
             PlayAnim("Attack");
             SlashAnim();
         }
+    }
+
+    public void ShootWeapon()
+    {
+        GameManager.Instance.ShootWeapon(transform.position, transform.right);
     }
 
     public void CastAttack()
@@ -151,7 +156,7 @@ public abstract class Entity
 
         if (limb == BodyLimb.Head)
         {
-            rb.gravityScale = 20f;
+            rb.gravityScale = 10f;
             rb.AddForce(Vector2.up * 10 + hitDir * 5, ForceMode2D.Impulse);
 
             // Poner la cabeza y sus elementos siempre visible

@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 using Assets.FantasyHeroes.Scripts;
+using EZObjectPools;
 
 public class GameManager : MonoBehaviour
 {
@@ -31,9 +32,15 @@ public class GameManager : MonoBehaviour
     private void Awake()
     {
         Instance = Instance ?? this;
+        Inicialize();
         FixMapSpriteOrders();
         AddDefaultPlayer("Player");
         GenerateMapEnemies();
+    }
+
+    private void Inicialize()
+    {
+        shootPool = EZObjectPool.CreateObjectPool(shootPrefab, "Shoot1", 20, true, true, true);
     }
 
     private void Update()
@@ -101,38 +108,61 @@ public class GameManager : MonoBehaviour
 
     private void RandomEnemyAttack()
     {
-        enemies[UnityEngine.Random.Range(0, enemies.Count)].Attack();
+        //enemies[UnityEngine.Random.Range(0, enemies.Count)].Attack();
     }
 
     private void Controls()
     {
-        if (Input.GetButtonDown("Attack")) player.Attack();
-        else if (Mathf.Abs(Input.GetAxis("Horizontal")) > 0.0f || Mathf.Abs(Input.GetAxis("Vertical")) > 0.0f)
+        float xAxis = Input.GetAxis("Horizontal");
+        float yAxis = Input.GetAxis("Vertical");
+        if (Input.GetButtonDown("Attack")) player.Attack(new Vector2(xAxis, yAxis));
+        else if (Mathf.Abs(xAxis) > 0.0f || Mathf.Abs(yAxis) > 0.0f)
             player?.MoveToDirection(new Vector2(Input.GetAxis("Horizontal"), Input.GetAxis("Vertical")));
         else player.Idle();
 
         if (Input.GetKeyDown(KeyCode.F1)) SetCheatStats();
         if (Input.GetKeyDown(KeyCode.F2)) SpawnEnemyRandom();
         if (Input.GetKeyDown(KeyCode.F3)) RandomEnemyAttack();
-        if (Input.GetKeyDown(KeyCode.Mouse1)) player.ThrowBomb();
+        if (Input.GetKeyDown(KeyCode.Mouse1)) player.ShootWeapon();
+        if (Input.GetKeyDown(KeyCode.Mouse2)) player.ThrowBomb();
+
 
         // if (Input.GetKey(KeyCode.Mouse1)) player?.SetVelocity(2);
         // else player?.SetVelocity(1);
     }
 
+    EZObjectPool shootPool;
+    public GameObject shootPrefab;
+    public void ShootWeapon(Vector2 sPosition, Vector2 sDirection)
+    {
+        GameObject go;
+        if (shootPool.TryGetNextObject(sPosition, transform.rotation, out go))
+        {
+            go.SetActive(true);
+            go.GetComponent<Rigidbody2D>()?.AddForce(sDirection.normalized * Time.deltaTime, ForceMode2D.Impulse);
+        }
+    }
+
     public static void BreakBreakable(Transform breakableT, Vector2 hitDir)
     {
-        int breakableSortingOrder = breakableT.GetComponent<SpriteRenderer>().sortingOrder;
-        var go = GameObject.Instantiate(GameManager.Instance.breakingBarrelPrefab);
-        go.transform.position = breakableT.position;
-        GameObject.Destroy(breakableT.gameObject);
-        go.gameObject.SetActive(true);
-        Transform pieceTop = go.transform.GetChild(0);
-        Transform pieceBot = go.transform.GetChild(1);
-        pieceTop.GetComponent<SpriteRenderer>().sortingOrder = pieceBot.GetComponent<SpriteRenderer>().sortingOrder = breakableSortingOrder;
-        pieceTop.GetComponent<Rigidbody2D>().AddForce((hitDir * 8 + Vector2.up * 6) * 40, ForceMode2D.Force);
-        pieceBot.GetComponent<Rigidbody2D>().AddForce((hitDir * 5 + Vector2.up) * 30, ForceMode2D.Force);
-        GameObject.Destroy(go, 3f);
+        if (breakableT.name == "Barrel")
+        {
+            int breakableSortingOrder = breakableT.GetComponent<SpriteRenderer>().sortingOrder;
+            var go = GameObject.Instantiate(GameManager.Instance.breakingBarrelPrefab);
+            go.transform.position = breakableT.position;
+            GameObject.Destroy(breakableT.gameObject);
+            go.gameObject.SetActive(true);
+            Transform pieceTop = go.transform.GetChild(0);
+            Transform pieceBot = go.transform.GetChild(1);
+            pieceTop.GetComponent<SpriteRenderer>().sortingOrder = pieceBot.GetComponent<SpriteRenderer>().sortingOrder = breakableSortingOrder;
+            pieceTop.GetComponent<Rigidbody2D>().AddForce((hitDir * 8 + Vector2.up * 6) * 40, ForceMode2D.Force);
+            pieceBot.GetComponent<Rigidbody2D>().AddForce((hitDir * 5 + Vector2.up) * 30, ForceMode2D.Force);
+            GameObject.Destroy(go, 3f);
+        }
+        else
+        {
+            Destroy(breakableT.gameObject);
+        }
     }
 
     public static void RemoveEntity(Entity entity)
