@@ -56,14 +56,13 @@ public abstract class Entity
         {
             lastTimeAttack = Time.time;
             attackDirection = attackDir;
-            ImpulseAttack(attackDir);
+            ApplyImpulse(attackDir);
             PlayAnim("Attack");
         }
     }
 
-    private void ImpulseAttack(Vector2 attackDir)
+    private void ApplyImpulse(Vector2 attackDir)
     {
-        //rigidbody.AddForce(attackDir.normalized * 2000 - rigidbody.velocity, ForceMode2D.Force);
         rigidbody.velocity = attackDir.normalized * 5;
     }
 
@@ -85,27 +84,35 @@ public abstract class Entity
             attackDir.normalized,
             1f
         );
+
         foreach (var hit in raycastHit)
         {
             if (CheckYProximity(hit.transform.position, attackDir))
             {
                 LayerMask hitLayer = hit.transform.gameObject.layer;
                 Vector2 hitDir = (hit.transform.position - transform.position).normalized;
+                byte enemyCount = 0;
 
                 if (hitLayer == LayerMask.NameToLayer("Breakable"))
                 {
                     GameManager.BreakBreakable(hit.transform, hitDir);
                 }
+
                 else if (hitLayer == enemyMask)
                 {
-                    if (this.GetType() == typeof(Player))
+                    if (this.GetType() == typeof(Player)) // Si soy el jugador (cambiar esto de sitio)
                     {
                         Entity enemy = GameManager.Instance.GetEnemyByName(hit.transform.name);
-                        if (enemy != null) StrikeEntity(enemy, hitDir);
+                        if (enemy != null)
+                        {
+                            StrikeEntity(enemy, hitDir);
+                            enemyCount++;
+                        }
                     }
                     else
                     {
                         StrikeEntity(GameManager.Instance.player, hitDir);
+                        enemyCount++;
                     }
                 }
                 else if (hitLayer == LayerMask.NameToLayer("Movible"))
@@ -113,9 +120,10 @@ public abstract class Entity
                     float distance = Vector2.Distance(transform.position, hit.transform.position);
                     hit.transform.GetComponent<Rigidbody2D>()?.AddForce(hitDir * 200 * stats.strength / Mathf.Pow(distance, 3), ForceMode2D.Impulse);
                 }
+
+                if (enemyCount > 0) ApplyImpulse(-attackDir / 2);
+
             }
-
-
         }
     }
 
@@ -235,6 +243,7 @@ public abstract class Entity
 
     public void MoveToDirection(Vector2 direction)
     {
+        rigidbody.velocity = Vector2.Lerp(rigidbody.velocity, direction, Time.deltaTime * stats.velocity);
         if (!IsPlayerAttacking())
         {
             PlayAnim("Walk");
@@ -264,7 +273,12 @@ public abstract class Entity
 
     public void Idle()
     {
-        if (!IsPlayerAttacking() && IsAttackAvailable()) PlayAnim("Alert");
+        if (!IsPlayerAttacking() && IsAttackAvailable())
+        {
+            rigidbody.velocity = Vector2.zero;
+            PlayAnim("Alert");
+        }
+
     }
 
     public void ClampMyself(bool clampX, bool clampY)
