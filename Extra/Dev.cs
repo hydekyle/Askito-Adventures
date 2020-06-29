@@ -15,7 +15,7 @@ public class Dev : MonoBehaviour
 
     public void Attack()
     {
-        myself.CastAttack();
+        myself.CastAttack(myself.attackDirection);
     }
 
 }

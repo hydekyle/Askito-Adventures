@@ -26,6 +26,8 @@ public class GameManager : MonoBehaviour
     public Transform mapEnemies;
     public Transform mapBreakables;
     public GameObject bombPrefab;
+    public GameObject shootPrefab;
+    EZObjectPool shootPool;
 
     int enemyCounter = 0;
 
@@ -115,31 +117,34 @@ public class GameManager : MonoBehaviour
     {
         float xAxis = Input.GetAxis("Horizontal");
         float yAxis = Input.GetAxis("Vertical");
-        if (Input.GetButtonDown("Attack")) player.Attack(new Vector2(xAxis, yAxis));
+
+        if (Input.GetButtonDown("Attack"))
+        {
+            player.Attack(new Vector2(xAxis, yAxis).normalized);
+        }
         else if (Mathf.Abs(xAxis) > 0.0f || Mathf.Abs(yAxis) > 0.0f)
+        {
             player?.MoveToDirection(new Vector2(Input.GetAxis("Horizontal"), Input.GetAxis("Vertical")));
+        }
         else player.Idle();
 
+        if (Input.GetButtonDown("Fire2")) player.ShootWeapon();
+        if (Input.GetButtonDown("Fire3")) player.ThrowBomb();
+
+#if UNITY_EDITOR
         if (Input.GetKeyDown(KeyCode.F1)) SetCheatStats();
         if (Input.GetKeyDown(KeyCode.F2)) SpawnEnemyRandom();
         if (Input.GetKeyDown(KeyCode.F3)) RandomEnemyAttack();
-        if (Input.GetKeyDown(KeyCode.Mouse1)) player.ShootWeapon();
-        if (Input.GetKeyDown(KeyCode.Mouse2)) player.ThrowBomb();
-
-
-        // if (Input.GetKey(KeyCode.Mouse1)) player?.SetVelocity(2);
-        // else player?.SetVelocity(1);
+#endif
     }
 
-    EZObjectPool shootPool;
-    public GameObject shootPrefab;
     public void ShootWeapon(Vector2 sPosition, Vector2 sDirection)
     {
         GameObject go;
         if (shootPool.TryGetNextObject(sPosition, transform.rotation, out go))
         {
             go.SetActive(true);
-            go.GetComponent<Rigidbody2D>()?.AddForce(sDirection.normalized * Time.deltaTime, ForceMode2D.Impulse);
+            go.GetComponent<Rigidbody2D>()?.AddForce(sDirection.normalized * Time.deltaTime / 2, ForceMode2D.Impulse);
         }
     }
 

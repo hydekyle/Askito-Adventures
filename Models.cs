@@ -21,6 +21,7 @@ public abstract class Entity
     public Animator AttackAnimator;
     public Rigidbody2D rigidbody;
     public LayerMask enemyMask;
+    public Vector2 attackDirection = Vector2.right;
     public string name;
     public int health = 9;
     public float lastTimeAttack = 0f;
@@ -53,11 +54,17 @@ public abstract class Entity
     {
         if (IsAttackAvailable())
         {
-            rigidbody.AddForce(attackDir.normalized * 5, ForceMode2D.Impulse);
             lastTimeAttack = Time.time;
+            attackDirection = attackDir;
+            ImpulseAttack(attackDir);
             PlayAnim("Attack");
-            SlashAnim();
         }
+    }
+
+    private void ImpulseAttack(Vector2 attackDir)
+    {
+        //rigidbody.AddForce(attackDir.normalized * 2000 - rigidbody.velocity, ForceMode2D.Force);
+        rigidbody.velocity = attackDir.normalized * 5;
     }
 
     public void ShootWeapon()
@@ -65,35 +72,49 @@ public abstract class Entity
         GameManager.Instance.ShootWeapon(transform.position, transform.right);
     }
 
-    public void CastAttack()
+    private bool CheckYProximity(Vector2 hitPosition, Vector2 attackDir)
     {
-        var raycastHit = Physics2D.CircleCastAll(transform.position + transform.right / 2, 0.4f, transform.right, 0.9f);
+        return Mathf.Abs(hitPosition.y - (transform.position.y + attackDir.y)) < 1f;
+    }
+
+    public void CastAttack(Vector2 attackDir)
+    {
+        var raycastHit = Physics2D.CircleCastAll(
+            transform.position + transform.right,
+            0.8f,
+            attackDir.normalized,
+            1f
+        );
         foreach (var hit in raycastHit)
         {
-            LayerMask hitLayer = hit.transform.gameObject.layer;
-            Vector2 hitDir = (hit.transform.position - transform.position).normalized;
+            if (CheckYProximity(hit.transform.position, attackDir))
+            {
+                LayerMask hitLayer = hit.transform.gameObject.layer;
+                Vector2 hitDir = (hit.transform.position - transform.position).normalized;
 
-            if (hitLayer == LayerMask.NameToLayer("Breakable"))
-            {
-                GameManager.BreakBreakable(hit.transform, hitDir);
-            }
-            else if (hitLayer == enemyMask)
-            {
-                if (this.GetType() == typeof(Player))
+                if (hitLayer == LayerMask.NameToLayer("Breakable"))
                 {
-                    Entity enemy = GameManager.Instance.GetEnemyByName(hit.transform.name);
-                    if (enemy != null) StrikeEntity(enemy, hitDir);
+                    GameManager.BreakBreakable(hit.transform, hitDir);
                 }
-                else
+                else if (hitLayer == enemyMask)
                 {
-                    StrikeEntity(GameManager.Instance.player, hitDir);
+                    if (this.GetType() == typeof(Player))
+                    {
+                        Entity enemy = GameManager.Instance.GetEnemyByName(hit.transform.name);
+                        if (enemy != null) StrikeEntity(enemy, hitDir);
+                    }
+                    else
+                    {
+                        StrikeEntity(GameManager.Instance.player, hitDir);
+                    }
+                }
+                else if (hitLayer == LayerMask.NameToLayer("Movible"))
+                {
+                    float distance = Vector2.Distance(transform.position, hit.transform.position);
+                    hit.transform.GetComponent<Rigidbody2D>()?.AddForce(hitDir * 200 * stats.strength / Mathf.Pow(distance, 3), ForceMode2D.Impulse);
                 }
             }
-            else if (hitLayer == LayerMask.NameToLayer("Movible"))
-            {
-                float distance = Vector2.Distance(transform.position, hit.transform.position);
-                hit.transform.GetComponent<Rigidbody2D>()?.AddForce(hitDir * 200 * stats.strength / Mathf.Pow(distance, 3), ForceMode2D.Impulse);
-            }
+
 
         }
     }
@@ -200,6 +221,7 @@ public abstract class Entity
 
     public void PlayAnim(string clipName)
     {
+        if (clipName == "Attack") SlashAnim();
         if (clipName == "Alert") SetAnimVelocity(1);
         else SetAnimVelocity(2);
         Dummy.Animator.StopPlayback();
