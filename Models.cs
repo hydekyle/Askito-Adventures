@@ -3,6 +3,7 @@ using System.ComponentModel;
 using System.Linq;
 using Assets.FantasyHeroes.Scripts;
 using UnityEngine;
+using XInputDotNetPure;
 
 [Serializable]
 public struct Stats
@@ -27,6 +28,7 @@ public abstract class Entity
     public float lastTimeAttack = 0f;
     public float attackCD = 0.3f;
     public bool isActive = false;
+    public float padVibration = 0f;
 
     Transform headT, armLeftT, armRightT, legLeftT, legRightT;
     BoxCollider2D triggerCollider;
@@ -92,10 +94,12 @@ public abstract class Entity
                 LayerMask hitLayer = hit.transform.gameObject.layer;
                 Vector2 hitDir = (hit.transform.position - transform.position).normalized;
                 byte enemyCount = 0;
+                byte breakableCount = 0;
 
                 if (hitLayer == LayerMask.NameToLayer("Breakable"))
                 {
                     GameManager.BreakBreakable(hit.transform, hitDir);
+                    breakableCount++;
                 }
 
                 else if (hitLayer == enemyMask)
@@ -121,7 +125,15 @@ public abstract class Entity
                     hit.transform.GetComponent<Rigidbody2D>()?.AddForce(hitDir * 200 * stats.strength / Mathf.Pow(distance, 3), ForceMode2D.Impulse);
                 }
 
-                if (enemyCount > 0) ApplyImpulse(-attackDir / 2);
+                if (enemyCount > 0) // Retroceso al golpear
+                {
+                    ApplyImpulse(-attackDir / 2);
+                    padVibration = 0.666f;
+                }
+                else if (enemyCount < breakableCount)
+                {
+                    padVibration = 0.333f;
+                }
 
             }
         }
@@ -278,7 +290,6 @@ public abstract class Entity
             rigidbody.velocity = Vector2.zero;
             PlayAnim("Alert");
         }
-
     }
 
     public void ClampMyself(bool clampX, bool clampY)
@@ -323,9 +334,17 @@ public class Player : Entity
         this.isActive = true;
     }
 
+
     public override void Update()
     {
+        WorkVibration();
         if (isActive) ClampMyself(true, true);
+    }
+
+    private void WorkVibration()
+    {
+        padVibration = Mathf.Lerp(padVibration, 0.0f, Time.deltaTime * 15);
+        GameManager.Instance.PadVibration(padVibration);
     }
 
     public override void GetStrike(int strikeForce, Vector2 hitDir)

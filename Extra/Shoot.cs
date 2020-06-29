@@ -4,11 +4,13 @@ using UnityEngine;
 
 public class Shoot : MonoBehaviour
 {
+    Vector2 initialPosition;
 
     private void OnEnable()
     {
         GetComponent<Rigidbody2D>().simulated = true;
-        Invoke("CleanMyself", 2f);
+        Invoke("CleanMyself", 0.4f);
+        initialPosition = transform.position;
     }
 
     private void OnDisable()
@@ -25,6 +27,8 @@ public class Shoot : MonoBehaviour
     {
         LayerMask hitLayer = other.gameObject.layer;
         Vector2 hitDir = other.transform.position - transform.position;
+
+        if (Vector2.Distance(other.transform.position, initialPosition) > 10f) return;
 
         if (hitLayer == LayerMask.NameToLayer("Enemy"))
         {

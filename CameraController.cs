@@ -8,7 +8,7 @@ public class CameraController : MonoBehaviour
 {
     public static CameraController Instance;
 
-    public Transform playerT;
+    Transform playerT;
     public Material backgroundMaterial;
     public Material backgroundFarMaterial;
     public float velocity = 1f;
@@ -30,6 +30,7 @@ public class CameraController : MonoBehaviour
 
     private void Start()
     {
+        playerT = GameManager.Instance.playerTransform;
         minPosX = playerT.position.x;
     }
 

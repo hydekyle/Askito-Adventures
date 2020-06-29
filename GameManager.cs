@@ -4,6 +4,8 @@ using System.Collections.Generic;
 using UnityEngine;
 using Assets.FantasyHeroes.Scripts;
 using EZObjectPools;
+using XInputDotNetPure;
+using UnityEngine.SceneManagement;
 
 public class GameManager : MonoBehaviour
 {
@@ -12,6 +14,8 @@ public class GameManager : MonoBehaviour
     public List<Entity> enemies = new List<Entity>();
     public Player player;
 
+    public GameObject playerGO;
+    [HideInInspector]
     public Transform playerTransform;
 
     public static LayerMask enemyLayerMask;
@@ -29,11 +33,15 @@ public class GameManager : MonoBehaviour
     public GameObject shootPrefab;
     EZObjectPool shootPool;
 
+    GamePadState state;
+    GamePadState prevState;
+
     int enemyCounter = 0;
 
     private void Awake()
     {
-        Instance = Instance ?? this;
+        if (Instance != null) Destroy(this);
+        else Instance = this;
         Inicialize();
         FixMapSpriteOrders();
         AddDefaultPlayer("Player");
@@ -98,6 +106,8 @@ public class GameManager : MonoBehaviour
 
     private void AddDefaultPlayer(string playerName)
     {
+        playerTransform = Instantiate(playerGO, Vector3.zero, transform.rotation).transform;
+
         Player newPlayer = new Player(
             playerTransform,
             new Stats() { life = 1, strength = 1, velocity = 2 },
@@ -105,6 +115,7 @@ public class GameManager : MonoBehaviour
         );
         player = newPlayer;
         playerTransform.name = playerName;
+        playerTransform.position = Vector3.zero;
         //entities.Add(player);
     }
 
@@ -135,7 +146,14 @@ public class GameManager : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.F1)) SetCheatStats();
         if (Input.GetKeyDown(KeyCode.F2)) SpawnEnemyRandom();
         if (Input.GetKeyDown(KeyCode.F3)) RandomEnemyAttack();
+        if (Input.GetKeyDown(KeyCode.F12)) RestartScene();
 #endif
+    }
+
+    private void RestartScene()
+    {
+        Scene thisScene = SceneManager.GetActiveScene();
+        SceneManager.LoadScene(thisScene.name);
     }
 
     public void ShootWeapon(Vector2 sPosition, Vector2 sDirection)
@@ -236,6 +254,11 @@ public class GameManager : MonoBehaviour
     public Entity GetEnemyByName(string name)
     {
         return enemies.Find(e => e.name == name);
+    }
+
+    public void PadVibration(float vForce)
+    {
+        GamePad.SetVibration(PlayerIndex.One, vForce, vForce);
     }
 
 }

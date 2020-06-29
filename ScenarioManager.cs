@@ -13,7 +13,8 @@ public class ScenarioManager : MonoBehaviour
 
     public void Awake()
     {
-        Instance = Instance ?? this;
+        if (Instance != null) Destroy(this);
+        else Instance = this;
     }
 
     private void Start()
@@ -40,7 +41,7 @@ public class ScenarioManager : MonoBehaviour
     Transform lastPieceInvisible;
     public void PieceBecameInvisible(Transform piece)
     {
-        if (piece.name == (workCounter - 1).ToString()) return; //Evita remover la pieza de la derecha
+        if (piece.name == (workCounter - 1).ToString()) return; // Evita remover la pieza de la derecha
 
         if (lastPieceInvisible == null)
         {
