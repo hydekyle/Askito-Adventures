@@ -24,7 +24,8 @@ public class CameraController : MonoBehaviour
 
     private void Awake()
     {
-        Instance = Instance ?? this;
+        if (Instance != null) Destroy(Instance.gameObject);
+        Instance = this;
         mainCamera = Camera.main;
     }
 

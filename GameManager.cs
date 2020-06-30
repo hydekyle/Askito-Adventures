@@ -40,8 +40,8 @@ public class GameManager : MonoBehaviour
 
     private void Awake()
     {
-        if (Instance != null) Destroy(this);
-        else Instance = this;
+        if (Instance != null) Destroy(Instance.gameObject);
+        Instance = this;
         Inicialize();
         FixMapSpriteOrders();
         AddDefaultPlayer("Player");
@@ -115,7 +115,6 @@ public class GameManager : MonoBehaviour
         );
         player = newPlayer;
         playerTransform.name = playerName;
-        playerTransform.position = Vector3.zero;
         //entities.Add(player);
     }
 

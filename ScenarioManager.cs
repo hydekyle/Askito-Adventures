@@ -13,8 +13,8 @@ public class ScenarioManager : MonoBehaviour
 
     public void Awake()
     {
-        if (Instance != null) Destroy(this);
-        else Instance = this;
+        if (Instance != null) Destroy(Instance.gameObject);
+        Instance = this;
     }
 
     private void Start()
