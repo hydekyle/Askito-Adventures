@@ -16,6 +16,8 @@ public enum BodyLimb { Head, LegLeft, LegRight, ArmLeft, ArmRight }
 [Serializable]
 public abstract class Entity
 {
+    public int ID;
+
     public Character Dummy;
     public Transform transform;
     public Stats stats;
@@ -31,23 +33,18 @@ public abstract class Entity
     public float padVibration = 0f;
 
     Transform headT, armLeftT, armRightT, legLeftT, legRightT;
-    BoxCollider2D triggerCollider;
-    BoxCollider2D rigidCollider;
 
     public abstract void GetStrike(int strikeForce, Vector2 hitDir);
 
     public void Start()
     {
         Transform pelvisT = transform.Find("Animation").Find("Pelvis");
-        triggerCollider = pelvisT.GetComponent<BoxCollider2D>();
-        rigidCollider = transform.GetComponent<BoxCollider2D>();
         Transform torsoT = pelvisT.Find("Torso");
         headT = torsoT.Find("Head");
         armLeftT = torsoT.Find("ArmL");
         armRightT = torsoT.Find("ArmR");
         legLeftT = pelvisT.Find("LegL");
         legRightT = pelvisT.Find("LegR");
-
     }
 
     public abstract void Update();
@@ -86,62 +83,68 @@ public abstract class Entity
             attackDir.normalized,
             1f
         );
-
         foreach (var hit in raycastHit)
         {
-            if (CheckYProximity(hit.transform.position, attackDir))
+            if (hit.collider.isTrigger)
             {
-                LayerMask hitLayer = hit.transform.gameObject.layer;
-                Vector2 hitDir = (hit.transform.position - transform.position).normalized;
-                byte enemyCount = 0;
-                byte breakableCount = 0;
-
-                if (hitLayer == LayerMask.NameToLayer("Breakable"))
+                if (CheckYProximity(hit.transform.position, attackDir))
                 {
-                    GameManager.BreakBreakable(hit.transform, hitDir);
-                    breakableCount++;
-                }
+                    LayerMask hitLayer = hit.transform.gameObject.layer;
+                    Vector2 hitDir = (hit.transform.position - transform.position).normalized;
+                    byte enemyCount = 0;
+                    byte breakableCount = 0;
 
-                else if (hitLayer == enemyMask)
-                {
-                    if (this.GetType() == typeof(Player)) // Si soy el jugador (cambiar esto de sitio)
+                    if (hitLayer == LayerMask.NameToLayer("Breakable"))
                     {
-                        Entity enemy = GameManager.Instance.GetEnemyByName(hit.transform.name);
-                        if (enemy != null)
+                        GameManager.BreakBreakable(hit.transform, hitDir);
+                        breakableCount++;
+                    }
+
+                    else if (hitLayer == enemyMask)
+                    {
+                        if (this.GetType() == typeof(Player)) // Si soy el jugador... (cambiar esto de sitio)
                         {
-                            StrikeEntity(enemy, hitDir);
+                            Entity enemy = GameManager.Instance.GetEnemyByName(hit.transform.name);
+                            if (enemy != null)
+                            {
+                                StrikeEntity(enemy, hitDir);
+                                enemyCount++;
+                            }
+                        }
+                        else
+                        {
+                            StrikeEntity(GameManager.Instance.player, hitDir);
                             enemyCount++;
                         }
                     }
-                    else
+                    else if (hitLayer == LayerMask.NameToLayer("Movible"))
                     {
-                        StrikeEntity(GameManager.Instance.player, hitDir);
-                        enemyCount++;
+                        float distance = Vector2.Distance(transform.position, hit.transform.position);
+                        hit.transform.GetComponent<Rigidbody2D>()?.AddForce(hitDir * 200 * stats.strength / Mathf.Pow(distance, 3), ForceMode2D.Impulse);
                     }
-                }
-                else if (hitLayer == LayerMask.NameToLayer("Movible"))
-                {
-                    float distance = Vector2.Distance(transform.position, hit.transform.position);
-                    hit.transform.GetComponent<Rigidbody2D>()?.AddForce(hitDir * 200 * stats.strength / Mathf.Pow(distance, 3), ForceMode2D.Impulse);
-                }
 
-                if (enemyCount > 0) // Retroceso al golpear
-                {
-                    ApplyImpulse(-attackDir / 2);
-                    padVibration = 0.666f;
-                }
-                else if (enemyCount < breakableCount)
-                {
-                    padVibration = 0.333f;
-                }
+                    if (enemyCount > 0) // Retroceso al golpear
+                    {
+                        ApplyImpulse(-attackDir / 2);
+                        padVibration = 0.666f;
+                    }
+                    else if (enemyCount < breakableCount)
+                    {
+                        padVibration = 0.333f;
+                    }
 
+                }
             }
+
         }
     }
 
     public void Die()
     {
-        triggerCollider.enabled = false;
+        foreach (var myCollider in transform.GetComponents<BoxCollider2D>())
+        {
+            myCollider.enabled = false;
+        }
         transform.gameObject.layer = LayerMask.NameToLayer("Ghost");
         PlayAnim("Die");
     }
@@ -228,7 +231,7 @@ public abstract class Entity
 
     public void CleanMyself(Transform limb)
     {
-        GameManager.RemoveEntity(this);
+        GameManager.Instance.RemoveEntity(this);
         GameObject.Destroy(transform.gameObject, 2.5f);
         GameObject.Destroy(limb.gameObject, 2.5f);
     }
@@ -365,11 +368,12 @@ public class Player : Entity
 [Serializable]
 public class Enemy : Entity
 {
-    public Enemy(Transform transform, Stats stats, string name)
+    public Enemy(Transform transform, Stats stats, string name, int ID)
     {
         this.transform = transform;
         this.stats = stats;
         this.name = name;
+        this.ID = ID;
         this.Dummy = transform.GetComponent<Character>();
         this.AttackAnimator = transform.Find("Attack_Effect").GetComponent<Animator>();
         this.rigidbody = transform.GetComponent<Rigidbody2D>();

@@ -10,7 +10,9 @@ public class GameManager : MonoBehaviour
 {
     public static GameManager Instance;
 
-    public List<Entity> enemies = new List<Entity>();
+    public Dictionary<int, Entity> enemiesRef = new Dictionary<int, Entity>();
+    public Enemy[] enemies;
+
     public Player player;
 
     public GameObject playerGO;
@@ -41,6 +43,7 @@ public class GameManager : MonoBehaviour
     {
         if (Instance != null) Destroy(Instance.gameObject);
         Instance = this;
+        enemies = new Enemy[200];
         Inicialize();
         FixMapSpriteOrders();
         AddDefaultPlayer("Player");
@@ -56,21 +59,61 @@ public class GameManager : MonoBehaviour
     {
         Controls();
         player.Update();
-        foreach (Entity entity in enemies) entity.Update();
+        foreach (var valuePair in enemiesRef) valuePair.Value.Update();
+        //for (var x = 0; x < enemies.Length; x++) enemies[x]?.Update();
+    }
+
+    private int GetNextEnemyID()
+    {
+        if (enemyCounter + 1 >= enemies.Length) enemyCounter = 0;
+        else enemyCounter++;
+        return enemyCounter;
     }
 
     public void SpawnEnemyRandom()
     {
-        string enemyName = "Enemy" + ++enemyCounter;
+        int enemyID = GetNextEnemyID();
+        string enemyName = "Enemy " + enemyID;
         GameObject go = Instantiate(entityPrefab, Vector3.zero, Quaternion.Euler(0, 180, 0));
         Enemy enemy = new Enemy(
             go.transform,
             new Stats() { life = 1, strength = 1, velocity = 1 },
-            enemyName
+            enemyName,
+            enemyID
         );
         go.name = enemyName;
         enemy.Start();
-        enemies.Add(enemy);
+        AddEnemy(enemyID, enemy);
+    }
+
+    private void GenerateMapEnemies()
+    {
+        foreach (Transform enemyT in mapEnemies)
+        {
+            int enemyID = GetNextEnemyID();
+            string enemyName = enemyT.name.Split(' ')[0] + " " + enemyID;
+            Enemy enemy = new Enemy(
+                enemyT,
+                new Stats() { life = 1, strength = 1, velocity = 1 },
+                enemyName,
+                enemyID
+            );
+            enemyT.name = enemyName;
+            AddEnemy(enemyID, enemy);
+            enemy.Start();
+        }
+    }
+
+    public void AddEnemy(int enemyID, Enemy enemy)
+    {
+        enemiesRef.Add(enemyID, enemy);
+        enemies[enemyID] = enemy;
+    }
+
+    public void DeleteEnemy(int enemyID)
+    {
+        enemiesRef.Remove(enemyID);
+        enemies[enemyID] = null;
     }
 
     private void FixMapSpriteOrders()
@@ -79,22 +122,6 @@ public class GameManager : MonoBehaviour
         {
             SpriteRenderer renderer = breakablesT.GetComponent<SpriteRenderer>();
             renderer.sortingOrder = renderer.sortingOrder - (int)(breakablesT.position.y * 100);
-        }
-    }
-
-    private void GenerateMapEnemies()
-    {
-        foreach (Transform enemyT in mapEnemies)
-        {
-            string enemyName = enemyT.name;
-            Enemy enemy = new Enemy(
-                enemyT,
-                new Stats() { life = 1, strength = 1, velocity = 1 },
-                enemyName
-            );
-            enemy.Start();
-            enemies.Add(enemy);
-            enemyCounter++;
         }
     }
 
@@ -166,7 +193,7 @@ public class GameManager : MonoBehaviour
 
     public static void BreakBreakable(Transform breakableT, Vector2 hitDir)
     {
-        if (breakableT.name == "Barrel")
+        if (breakableT.name.Split(' ')[0] == "Barrel")
         {
             int breakableSortingOrder = breakableT.GetComponent<SpriteRenderer>().sortingOrder;
             var go = GameObject.Instantiate(GameManager.Instance.breakingBarrelPrefab);
@@ -186,10 +213,13 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    public static void RemoveEntity(Entity entity)
+    public void RemoveEntity(Entity entity)
     {
-        if (entity.GetType() == typeof(Enemy)) GameManager.Instance.enemies.Remove(entity);
-        else Debug.Log("Se muere el player?");
+        if (entity.GetType() == typeof(Enemy))
+        {
+            DeleteEnemy(entity.ID);
+        }
+        else Debug.Log("¡Se muere el player!");
     }
 
     public static string GetAnimationName(string clipName, WeaponType weaponType)
@@ -249,9 +279,10 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    public Entity GetEnemyByName(string name)
+    public Entity GetEnemyByName(string enemyName)
     {
-        return enemies.Find(e => e.name == name);
+        int ID = int.Parse(enemyName.Split(' ')[1]);
+        return enemies[ID];
     }
 
     public void PadVibration(float vForce)

@@ -30,7 +30,7 @@ public class Bomb : MonoBehaviour
             var hitMask = hit.transform.gameObject.layer;
             if (hitMask == LayerMask.NameToLayer("Enemy"))
             {
-                GameManager.Instance.enemies.Find(enemy => enemy.name == hit.transform.gameObject.name)?.Burst(hitDir);
+                GameManager.Instance.GetEnemyByName(hit.transform.gameObject.name)?.Burst(hitDir);
             }
             else if (hitMask == LayerMask.NameToLayer("Breakable"))
             {

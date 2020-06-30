@@ -10,7 +10,7 @@ public class Dev : MonoBehaviour
     {
         var myName = transform.parent.name;
         if (myName == "Player") myself = GameManager.Instance.player;
-        else myself = GameManager.Instance.enemies.Find(enemy => enemy.name == myName);
+        else myself = GameManager.Instance.GetEnemyByName(myName);
     }
 
     public void Attack()
