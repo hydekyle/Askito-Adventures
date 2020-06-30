@@ -6,11 +6,11 @@ public class ScenarioPiece : MonoBehaviour
 {
     private void OnBecameInvisible()
     {
-        ScenarioManager.Instance.PieceBecameInvisible(transform);
+        // ScenarioManager.Instance.PieceBecameInvisible(transform);
     }
 
     private void OnBecameVisible()
     {
-        ScenarioManager.Instance.PieceBecameVisible(transform);
+        // ScenarioManager.Instance.PieceBecameVisible(transform);
     }
 }

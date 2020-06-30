@@ -6,10 +6,12 @@ public class ScenarioManager : MonoBehaviour
 {
     public static ScenarioManager Instance;
 
-    private int workCounter = 0;
+    private int workCounter = 2; // El mapa empieza con 2 piezas
+    private int index = -1;
     private float distanceMap;
 
     Transform playerT;
+    Transform[] maps = new Transform[5];
 
     public void Awake()
     {
@@ -19,46 +21,32 @@ public class ScenarioManager : MonoBehaviour
 
     private void Start()
     {
+        for (var x = 0; x < maps.Length; x++) maps[x] = transform.GetChild(x); // HardCoded map pieces
+
         playerT = GameManager.Instance.playerTransform;
-        Transform map1 = transform.GetChild(0);
-        Transform map2 = transform.GetChild(1);
-        distanceMap = Vector3.Distance(map1.position, map2.position);
-        Destroy(map2.gameObject);
+        distanceMap = Vector3.Distance(maps[0].localPosition, maps[1].localPosition);
+    }
+
+    private void Update()
+    {
+        CheckForExpanseMap();
     }
 
     private void CheckForExpanseMap()
     {
-        if (playerT.position.x > distanceMap * workCounter) ExpanseMap();
+        if (playerT.position.x + (Screen.width / 70) > distanceMap * workCounter) ExpanseMap(2);
     }
 
-    void ExpanseMap()
+    void ExpanseMap(int newPieces)
     {
-        Transform basedMap = transform.GetChild(0);
-        var go = GameObject.Instantiate(basedMap.gameObject, new Vector3(distanceMap * ++workCounter, 0, 0), transform.rotation, transform);
-        go.name = workCounter.ToString();
-    }
+        byte newPiecesCounter = 0;
 
-    Transform lastPieceInvisible;
-    public void PieceBecameInvisible(Transform piece)
-    {
-        if (piece.name == (workCounter - 1).ToString()) return; // Evita remover la pieza de la derecha
+        while (newPiecesCounter < newPieces)
+        {
+            index = index + 1 >= maps.Length ? 0 : index + 1;
+            maps[index].transform.position = new Vector3(distanceMap * ++workCounter, 0, 0);
+            newPiecesCounter++;
+        }
 
-        if (lastPieceInvisible == null)
-        {
-            lastPieceInvisible = piece;
-        }
-        else if (lastPieceInvisible != piece)
-        {
-            Destroy(lastPieceInvisible.gameObject);
-            lastPieceInvisible = piece;
-        }
-    }
-
-    public void PieceBecameVisible(Transform piece)
-    {
-        if (int.Parse(piece.name) == workCounter)
-        {
-            ExpanseMap();
-        }
     }
 }

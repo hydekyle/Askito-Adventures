@@ -1,5 +1,4 @@
-﻿using System.Net.NetworkInformation;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
 using Assets.FantasyHeroes.Scripts;
