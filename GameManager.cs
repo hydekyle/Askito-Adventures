@@ -25,68 +25,86 @@ public class GameManager : MonoBehaviour
 
     public Stats cheatStats;
 
-    public GameObject entityPrefab;
+    public GameObject enemyPrefab;
+
     public GameObject breakingBarrelPrefab;
 
     public Transform mapEnemies;
     public Transform mapBreakables;
     public GameObject bombPrefab;
     public GameObject shootPrefab;
-    EZObjectPool shootPool;
+
+    EZObjectPool bulletPool;
+    EZObjectPool enemyPool;
 
     GamePadState state;
     GamePadState prevState;
 
-    int enemyCounter = 0;
+    int maxEnemies = 10;
+    int enemyCounterID = 0;
 
     private void Awake()
     {
         if (Instance != null) Destroy(Instance.gameObject);
         Instance = this;
-        enemies = new Enemy[200];
         Inicialize();
-        FixMapSpriteOrders();
-        AddDefaultPlayer("Player");
-        GenerateMapEnemies();
     }
 
     private void Inicialize()
     {
-        shootPool = EZObjectPool.CreateObjectPool(shootPrefab, "Shoot1", 20, true, true, true);
+        enemies = new Enemy[maxEnemies];
+
+        bulletPool = EZObjectPool.CreateObjectPool(shootPrefab, "Shoot1", 20, true, true, true);
+        enemyPool = EZObjectPool.CreateObjectPool(enemyPrefab, "Enemies", 2, true, true, true);
+
+        FixMapSpriteOrders();
+        AddDefaultPlayer("Player");
+        GenerateMapEnemiesRefs();
     }
 
     private void Update()
     {
         Controls();
         player.Update();
-        foreach (var valuePair in enemiesRef) valuePair.Value.Update();
-        //for (var x = 0; x < enemies.Length; x++) enemies[x]?.Update();
+        foreach (Entity enemy in enemiesRef.Values) enemy.Update();
     }
 
     private int GetNextEnemyID()
     {
-        if (enemyCounter + 1 >= enemies.Length) enemyCounter = 0;
-        else enemyCounter++;
-        return enemyCounter;
+        if (enemyCounterID + 1 >= enemies.Length) enemyCounterID = 0;
+        else enemyCounterID++;
+
+        if (enemiesRef.TryGetValue(enemyCounterID, out Entity storedEntity))
+        {
+            Debug.LogWarningFormat("La entidad {0} aún existe", storedEntity.name);
+            storedEntity.Burst(Vector2.zero);
+        }
+
+        return enemyCounterID;
     }
 
     public void SpawnEnemyRandom()
     {
-        int enemyID = GetNextEnemyID();
-        string enemyName = "Enemy " + enemyID;
-        GameObject go = Instantiate(entityPrefab, Vector3.zero, Quaternion.Euler(0, 180, 0));
-        Enemy enemy = new Enemy(
-            go.transform,
-            new Stats() { life = 1, strength = 1, velocity = 1 },
-            enemyName,
-            enemyID
-        );
-        go.name = enemyName;
-        enemy.Start();
-        AddEnemy(enemyID, enemy);
+        Vector3 randomPos = new Vector3(UnityEngine.Random.Range(-2f, 2f), UnityEngine.Random.Range(-2f, 2f), 0);
+        if (enemyPool.TryGetNextObject(player.transform.position + randomPos, Quaternion.identity, out GameObject go))
+        {
+            int enemyID = GetNextEnemyID();
+            string enemyName = "Enemy " + enemyID;
+
+            Enemy enemy = new Enemy(
+                go.transform,
+                new Stats() { life = 1, strength = 1, velocity = 1 },
+                enemyName,
+                enemyID
+            );
+
+            go.name = enemyName;
+            enemy.Start();
+            AddEnemyRefs(enemyID, enemy);
+        }
     }
 
-    private void GenerateMapEnemies()
+    private void GenerateMapEnemiesRefs()
     {
         foreach (Transform enemyT in mapEnemies)
         {
@@ -99,18 +117,18 @@ public class GameManager : MonoBehaviour
                 enemyID
             );
             enemyT.name = enemyName;
-            AddEnemy(enemyID, enemy);
+            AddEnemyRefs(enemyID, enemy);
             enemy.Start();
         }
     }
 
-    public void AddEnemy(int enemyID, Enemy enemy)
+    public void AddEnemyRefs(int enemyID, Enemy enemy)
     {
         enemiesRef.Add(enemyID, enemy);
         enemies[enemyID] = enemy;
     }
 
-    public void DeleteEnemy(int enemyID)
+    public void DeleteEnemyRefs(int enemyID)
     {
         enemiesRef.Remove(enemyID);
         enemies[enemyID] = null;
@@ -146,33 +164,11 @@ public class GameManager : MonoBehaviour
 
     private void RandomEnemyAttack()
     {
-        //enemies[UnityEngine.Random.Range(0, enemies.Count)].Attack();
-    }
-
-    private void Controls()
-    {
-        float xAxis = Input.GetAxis("Horizontal");
-        float yAxis = Input.GetAxis("Vertical");
-
-        if (Input.GetButtonDown("Attack"))
+        bool pinga = UnityEngine.Random.Range(0, 2) > 0;
+        foreach (var entity in enemiesRef.Values)
         {
-            player.Attack(new Vector2(xAxis, yAxis).normalized);
+            entity.PlayAnim(pinga ? "Attack" : "Die");
         }
-        else if (Mathf.Abs(xAxis) > 0.0f || Mathf.Abs(yAxis) > 0.0f)
-        {
-            player?.MoveToDirection(new Vector2(Input.GetAxis("Horizontal"), Input.GetAxis("Vertical")));
-        }
-        else player.Idle();
-
-        if (Input.GetButtonDown("Fire2")) player.ShootWeapon();
-        if (Input.GetButtonDown("Fire3")) player.ThrowBomb();
-
-#if UNITY_EDITOR
-        if (Input.GetKeyDown(KeyCode.F1)) SetCheatStats();
-        if (Input.GetKeyDown(KeyCode.F2)) SpawnEnemyRandom();
-        if (Input.GetKeyDown(KeyCode.F3)) RandomEnemyAttack();
-        if (Input.GetKeyDown(KeyCode.F12)) RestartScene();
-#endif
     }
 
     private void RestartScene()
@@ -183,8 +179,7 @@ public class GameManager : MonoBehaviour
 
     public void ShootWeapon(Vector2 sPosition, Vector2 sDirection)
     {
-        GameObject go;
-        if (shootPool.TryGetNextObject(sPosition, transform.rotation, out go))
+        if (bulletPool.TryGetNextObject(sPosition, transform.rotation, out GameObject go))
         {
             go.SetActive(true);
             go.GetComponent<Rigidbody2D>()?.AddForce(sDirection.normalized * Time.deltaTime / 2, ForceMode2D.Impulse);
@@ -213,11 +208,28 @@ public class GameManager : MonoBehaviour
         }
     }
 
+    IEnumerator<WaitForSeconds> ReciclateEntity(Entity entity)
+    {
+        DeleteEnemyRefs(entity.ID);
+        yield return new WaitForSeconds(2.5f);
+        entity.transform.position -= Vector3.right * 100; // Evitando bug de rotación en la animación de forma poco elegante
+        entity.PlayAnim("Attack");
+        yield return new WaitForSeconds(0.1f);
+        entity.headT.gameObject.SetActive(true);
+        entity.armRightT.gameObject.SetActive(true);
+        entity.armLeftT.gameObject.SetActive(true);
+        entity.legRightT.gameObject.SetActive(true);
+        entity.legLeftT.gameObject.SetActive(true);
+        entity.transform.gameObject.SetActive(false);
+
+        entity.transform.gameObject.layer = LayerMask.NameToLayer("Enemy");
+    }
+
     public void RemoveEntity(Entity entity)
     {
         if (entity.GetType() == typeof(Enemy))
         {
-            DeleteEnemy(entity.ID);
+            StartCoroutine(ReciclateEntity(entity));
         }
         else Debug.Log("¡Se muere el player!");
     }
@@ -288,6 +300,32 @@ public class GameManager : MonoBehaviour
     public void PadVibration(float vForce)
     {
         GamePad.SetVibration(PlayerIndex.One, vForce, vForce);
+    }
+
+    private void Controls()
+    {
+        float xAxis = Input.GetAxis("Horizontal");
+        float yAxis = Input.GetAxis("Vertical");
+
+        if (Input.GetButtonDown("Attack"))
+        {
+            player.Attack(new Vector2(xAxis, yAxis).normalized);
+        }
+        else if (Mathf.Abs(xAxis) > 0.0f || Mathf.Abs(yAxis) > 0.0f)
+        {
+            player?.MoveToDirection(new Vector2(Input.GetAxis("Horizontal"), Input.GetAxis("Vertical")));
+        }
+        else player.Idle();
+
+        if (Input.GetButtonDown("Fire2")) player.ShootWeapon();
+        if (Input.GetButtonDown("Fire3")) player.ThrowBomb();
+
+#if UNITY_EDITOR
+        if (Input.GetKeyDown(KeyCode.F1)) SetCheatStats();
+        if (Input.GetKeyDown(KeyCode.F2)) SpawnEnemyRandom();
+        if (Input.GetKeyDown(KeyCode.F3)) RandomEnemyAttack();
+        if (Input.GetKeyDown(KeyCode.F12)) RestartScene();
+#endif
     }
 
 }

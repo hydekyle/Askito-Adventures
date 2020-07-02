@@ -32,7 +32,7 @@ public abstract class Entity
     public bool isActive = false;
     public float padVibration = 0f;
 
-    Transform headT, armLeftT, armRightT, legLeftT, legRightT;
+    public Transform headT, armLeftT, armRightT, legLeftT, legRightT;
 
     public abstract void GetStrike(int strikeForce, Vector2 hitDir);
 
@@ -54,34 +54,19 @@ public abstract class Entity
         if (IsAttackAvailable())
         {
             lastTimeAttack = Time.time;
-            attackDirection = attackDir;
+            attackDirection = attackDir == Vector2.zero ? (Vector2)transform.right : attackDir;
             ApplyImpulse(attackDir);
-            PlayAnim("Attack");
+            PlayAnim("Attack"); // La animación llamará a CastAttack
         }
-    }
-
-    private void ApplyImpulse(Vector2 attackDir)
-    {
-        rigidbody.velocity = attackDir.normalized * 5;
-    }
-
-    public void ShootWeapon()
-    {
-        GameManager.Instance.ShootWeapon(transform.position, transform.right);
-    }
-
-    private bool CheckYProximity(Vector2 hitPosition, Vector2 attackDir)
-    {
-        return Mathf.Abs(hitPosition.y - (transform.position.y + attackDir.y)) < 1f;
     }
 
     public void CastAttack(Vector2 attackDir)
     {
         var raycastHit = Physics2D.CircleCastAll(
             transform.position + transform.right,
-            0.8f,
+            0.7f,
             attackDir.normalized,
-            1f
+            0.7f
         );
         foreach (var hit in raycastHit)
         {
@@ -139,14 +124,26 @@ public abstract class Entity
         }
     }
 
+    private void ApplyImpulse(Vector2 attackDir)
+    {
+        rigidbody.velocity = attackDir.normalized * 5;
+    }
+
+    public void ShootWeapon()
+    {
+        GameManager.Instance.ShootWeapon(transform.position, transform.right);
+    }
+
+    private bool CheckYProximity(Vector2 hitPosition, Vector2 attackDir)
+    {
+        return Mathf.Abs(hitPosition.y - (transform.position.y + attackDir.y)) < 1f;
+    }
+
     public void Die()
     {
-        foreach (var myCollider in transform.GetComponents<BoxCollider2D>())
-        {
-            myCollider.enabled = false;
-        }
         transform.gameObject.layer = LayerMask.NameToLayer("Ghost");
         PlayAnim("Die");
+        GameManager.Instance.RemoveEntity(this);
     }
 
     public void ThrowBomb()
@@ -221,19 +218,12 @@ public abstract class Entity
             float force = UnityEngine.Random.Range(5f, 10f);
             rb.AddForce(Vector2.up * 10 + hitDir * force, ForceMode2D.Impulse);
         }
-        CleanMyself(newLimb);
+        GameObject.Destroy(newLimb.gameObject, 2.5f);
     }
 
     public void StrikeEntity(Entity entity, Vector2 hitDir)
     {
         entity.GetStrike(stats.strength * 10, hitDir);
-    }
-
-    public void CleanMyself(Transform limb)
-    {
-        GameManager.Instance.RemoveEntity(this);
-        GameObject.Destroy(transform.gameObject, 2.5f);
-        GameObject.Destroy(limb.gameObject, 2.5f);
     }
 
     public void SetAnimVelocity(int newVelocity)
