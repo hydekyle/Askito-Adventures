@@ -1,9 +1,10 @@
-﻿using System;
+﻿using System.Collections;
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 using Assets.FantasyHeroes.Scripts;
 using EZObjectPools;
-using XInputDotNetPure;
+//using XInputDotNetPure;
 using UnityEngine.SceneManagement;
 
 public class GameManager : MonoBehaviour
@@ -37,10 +38,10 @@ public class GameManager : MonoBehaviour
     EZObjectPool bulletPool;
     EZObjectPool enemyPool;
 
-    GamePadState state;
-    GamePadState prevState;
+    // GamePadState state;
+    // GamePadState prevState;
 
-    int maxEnemies = 10;
+    public int maxEnemies = 10;
     int enemyCounterID = 0;
 
     private void Awake()
@@ -299,7 +300,7 @@ public class GameManager : MonoBehaviour
 
     public void PadVibration(float vForce)
     {
-        GamePad.SetVibration(PlayerIndex.One, vForce, vForce);
+        //GamePad.SetVibration(PlayerIndex.One, vForce, vForce);
     }
 
     private void Controls()
@@ -318,16 +319,135 @@ public class GameManager : MonoBehaviour
         else player.Idle();
 
         if (Input.GetButtonDown("Fire2")) player.ShootWeapon();
+        if (Input.GetKeyDown(KeyCode.F2) || Input.GetButtonDown("Jump")) SpawnEnemyRandom();
         if (Input.GetButtonDown("Fire3")) player.ThrowBomb();
 
 #if UNITY_EDITOR
         if (Input.GetKeyDown(KeyCode.F1)) SetCheatStats();
-        if (Input.GetKeyDown(KeyCode.F2)) SpawnEnemyRandom();
+        if (Input.GetKeyDown(KeyCode.F2) || Input.GetButtonDown("Jump")) SpawnEnemyRandom();
         if (Input.GetKeyDown(KeyCode.F3)) RandomEnemyAttack();
         if (Input.GetKeyDown(KeyCode.F12)) RestartScene();
 #endif
     }
 
+    public void ButtonFromCanvas(string actionButton)
+    {
+        print(actionButton);
+        Input.PressButtonDownMobile(actionButton);
+    }
+
+    public static bool CheckYProximity(Vector2 hitPosition, Vector2 attackPosition, Vector2 attackDir)
+    {
+        return Mathf.Abs(hitPosition.y - (attackPosition.y + attackDir.y)) < 1f;
+    }
+
+    public void ResolveHits(Entity myself, RaycastHit2D[] raycastHit, Vector2 attackDir, LayerMask enemyMask)
+    {
+        StartCoroutine(ResolveHitsSlow(myself, raycastHit, attackDir, enemyMask));
+    }
+
+    public void ResolveExplosion(Transform explosionT, RaycastHit2D[] hits)
+    {
+        StartCoroutine(ResolveExplosionSlow(explosionT, hits));
+    }
+
+    IEnumerator<WaitForEndOfFrame> ResolveExplosionSlow(Transform explosionT, RaycastHit2D[] hits)
+    {
+        Vector2 explosionPosition = explosionT.transform.position;
+        Destroy(explosionT.gameObject);
+        foreach (var hit in hits)
+        {
+            try
+            {
+                float distance = Vector2.Distance(hit.transform.position, explosionPosition);
+                Vector2 hitDir = ((Vector2)hit.transform.position - explosionPosition).normalized;
+                var hitMask = hit.transform.gameObject.layer;
+                if (hitMask == LayerMask.NameToLayer("Enemy"))
+                {
+                    GetEnemyByName(hit.transform.gameObject.name)?.Burst(hitDir);
+                }
+                else if (hitMask == LayerMask.NameToLayer("Breakable"))
+                {
+                    BreakBreakable(hit.transform, hitDir);
+                }
+                else if (hitMask == LayerMask.NameToLayer("Player"))
+                {
+                    //hit.transform.GetComponent<Rigidbody2D>().AddForce(hitDir * 2, ForceMode2D.Impulse);
+                }
+                else if (hitMask == LayerMask.NameToLayer("Movible"))
+                {
+                    hit.transform.GetComponent<Rigidbody2D>().AddForce(hitDir * 999 / Mathf.Pow(distance, 2), ForceMode2D.Impulse);
+                }
+            }
+            catch
+            {
+                Debug.LogWarning("Uff");
+            }
+            yield return new WaitForEndOfFrame();
+        }
+
+    }
+
+    private IEnumerator<WaitForEndOfFrame> ResolveHitsSlow(Entity myself, RaycastHit2D[] raycastHit, Vector2 attackDir, LayerMask enemyMask)
+    {
+        foreach (var hit in raycastHit)
+        {
+            if (hit.collider.isTrigger)
+            {
+                if (CheckYProximity(hit.transform.position, myself.transform.position, attackDir))
+                {
+                    LayerMask hitLayer = hit.transform.gameObject.layer;
+                    Vector2 hitDir = (hit.transform.position - myself.transform.position).normalized;
+                    byte enemyCount = 0;
+                    byte breakableCount = 0;
+
+                    if (hitLayer == LayerMask.NameToLayer("Breakable"))
+                    {
+                        GameManager.BreakBreakable(hit.transform, hitDir);
+                        breakableCount++;
+                    }
+
+                    else if (hitLayer == enemyMask)
+                    {
+                        if (myself.GetType() == typeof(Player)) // Si soy el jugador... (cambiar esto de sitio)
+                        {
+                            Entity enemy = GameManager.Instance.GetEnemyByName(hit.transform.name);
+                            if (enemy != null)
+                            {
+                                myself.StrikeEntity(enemy, hitDir);
+                                enemyCount++;
+                            }
+                        }
+                        else
+                        {
+                            myself.StrikeEntity(GameManager.Instance.player, hitDir);
+                            enemyCount++;
+                        }
+                    }
+                    else if (hitLayer == LayerMask.NameToLayer("Movible"))
+                    {
+                        float distance = Vector2.Distance(myself.transform.position, hit.transform.position);
+                        hit.transform.GetComponent<Rigidbody2D>()?.AddForce(hitDir * 200 * myself.stats.strength / Mathf.Pow(distance, 3), ForceMode2D.Impulse);
+                    }
+
+                    if (enemyCount > 0) // Retroceso al golpear
+                    {
+                        myself.ApplyImpulse(-attackDir / 2);
+                        myself.padVibration = 0.666f;
+                    }
+                    else if (enemyCount < breakableCount)
+                    {
+                        myself.padVibration = 0.333f;
+                    }
+
+                }
+            }
+            yield return new WaitForEndOfFrame();
+        }
+    }
+
 }
+
+
 
 

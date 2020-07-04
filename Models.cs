@@ -1,9 +1,6 @@
 ﻿using System;
-using System.ComponentModel;
-using System.Linq;
 using Assets.FantasyHeroes.Scripts;
 using UnityEngine;
-using XInputDotNetPure;
 
 [Serializable]
 public struct Stats
@@ -68,63 +65,15 @@ public abstract class Entity
             attackDir.normalized,
             0.7f
         );
-        foreach (var hit in raycastHit)
-        {
-            if (hit.collider.isTrigger)
-            {
-                if (CheckYProximity(hit.transform.position, attackDir))
-                {
-                    LayerMask hitLayer = hit.transform.gameObject.layer;
-                    Vector2 hitDir = (hit.transform.position - transform.position).normalized;
-                    byte enemyCount = 0;
-                    byte breakableCount = 0;
-
-                    if (hitLayer == LayerMask.NameToLayer("Breakable"))
-                    {
-                        GameManager.BreakBreakable(hit.transform, hitDir);
-                        breakableCount++;
-                    }
-
-                    else if (hitLayer == enemyMask)
-                    {
-                        if (this.GetType() == typeof(Player)) // Si soy el jugador... (cambiar esto de sitio)
-                        {
-                            Entity enemy = GameManager.Instance.GetEnemyByName(hit.transform.name);
-                            if (enemy != null)
-                            {
-                                StrikeEntity(enemy, hitDir);
-                                enemyCount++;
-                            }
-                        }
-                        else
-                        {
-                            StrikeEntity(GameManager.Instance.player, hitDir);
-                            enemyCount++;
-                        }
-                    }
-                    else if (hitLayer == LayerMask.NameToLayer("Movible"))
-                    {
-                        float distance = Vector2.Distance(transform.position, hit.transform.position);
-                        hit.transform.GetComponent<Rigidbody2D>()?.AddForce(hitDir * 200 * stats.strength / Mathf.Pow(distance, 3), ForceMode2D.Impulse);
-                    }
-
-                    if (enemyCount > 0) // Retroceso al golpear
-                    {
-                        ApplyImpulse(-attackDir / 2);
-                        padVibration = 0.666f;
-                    }
-                    else if (enemyCount < breakableCount)
-                    {
-                        padVibration = 0.333f;
-                    }
-
-                }
-            }
-
-        }
+        GameManager.Instance.ResolveHits(
+            this,
+            raycastHit,
+            attackDir,
+            enemyMask
+        );
     }
 
-    private void ApplyImpulse(Vector2 attackDir)
+    public void ApplyImpulse(Vector2 attackDir)
     {
         rigidbody.velocity = attackDir.normalized * 5;
     }
@@ -132,11 +81,6 @@ public abstract class Entity
     public void ShootWeapon()
     {
         GameManager.Instance.ShootWeapon(transform.position, transform.right);
-    }
-
-    private bool CheckYProximity(Vector2 hitPosition, Vector2 attackDir)
-    {
-        return Mathf.Abs(hitPosition.y - (transform.position.y + attackDir.y)) < 1f;
     }
 
     public void Die()
