@@ -61,9 +61,9 @@ public abstract class Entity
     {
         var raycastHit = Physics2D.CircleCastAll(
             transform.position + transform.right,
-            0.7f,
+            0.85f,
             attackDir.normalized,
-            0.7f
+            0.6f
         );
         GameManager.Instance.ResolveHits(
             this,
@@ -76,11 +76,6 @@ public abstract class Entity
     public void ApplyImpulse(Vector2 attackDir)
     {
         rigidbody.velocity = attackDir.normalized * 5;
-    }
-
-    public void ShootWeapon()
-    {
-        GameManager.Instance.ShootWeapon(transform.position, transform.right);
     }
 
     public void Die()

@@ -17,7 +17,7 @@ public class Bomb : MonoBehaviour
         float radius = 6.66f;
         var hits = Physics2D.CircleCastAll(transform.position, radius, Vector2.zero);
 
-        GameManager.Instance.ResolveExplosion(
+        GameManager.Instance.Explosion(
             transform,
             hits
         );
