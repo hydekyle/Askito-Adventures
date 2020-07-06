@@ -87,7 +87,7 @@ public abstract class Entity
 
     public void ThrowBomb()
     {
-        GameObject.Instantiate(GameManager.Instance.bombPrefab, transform.position, transform.rotation);
+        GameManager.Instance.ShootBomb(transform);
     }
 
     public void Burst(Vector2 hitDir)

@@ -34,10 +34,14 @@ public class GameManager : MonoBehaviour
     public Transform mapEnemies;
     public Transform mapBreakables;
     public GameObject bombPrefab;
+    public GameObject bombEffectPrefab;
     public GameObject shootPrefab;
 
-    EZObjectPool bulletPool;
-    EZObjectPool enemyPool;
+    EZObjectPool bulletsPool;
+    EZObjectPool enemiesPool;
+    EZObjectPool bombsPool;
+    [HideInInspector]
+    public EZObjectPool bombEffectPool;
 
     // GamePadState state;
     // GamePadState prevState;
@@ -56,8 +60,10 @@ public class GameManager : MonoBehaviour
     {
         enemies = new Enemy[maxEnemies];
 
-        bulletPool = EZObjectPool.CreateObjectPool(shootPrefab, "Shoot1", 20, true, true, true);
-        enemyPool = EZObjectPool.CreateObjectPool(enemyPrefab, "Enemies", 2, true, true, true);
+        bulletsPool = EZObjectPool.CreateObjectPool(shootPrefab, "Shoot1", 20, true, true, true);
+        enemiesPool = EZObjectPool.CreateObjectPool(enemyPrefab, "Enemies", 2, true, true, true);
+        bombsPool = EZObjectPool.CreateObjectPool(bombPrefab, "Bombs", 2, true, true, true);
+        bombEffectPool = EZObjectPool.CreateObjectPool(bombEffectPrefab, "BombEffect", 2, true, true, true);
 
         FixMapSpriteOrders();
         AddDefaultPlayer("Player");
@@ -88,7 +94,7 @@ public class GameManager : MonoBehaviour
     public void SpawnEnemyRandom()
     {
         Vector3 randomPos = new Vector3(UnityEngine.Random.Range(-2f, 2f), UnityEngine.Random.Range(-2f, 2f), 0);
-        if (enemyPool.TryGetNextObject(player.transform.position + randomPos, Quaternion.identity, out GameObject go))
+        if (enemiesPool.TryGetNextObject(player.transform.position + randomPos, Quaternion.identity, out GameObject go))
         {
             int enemyID = GetNextEnemyID();
             string enemyName = "Enemy " + enemyID;
@@ -222,6 +228,7 @@ public class GameManager : MonoBehaviour
     {
         if (entity.GetType() == typeof(Enemy))
         {
+            SoundsManager.Instance.PlayHeadCut();
             StartCoroutine(ReciclateEntity(entity));
         }
         else Debug.Log("¡Se muere el player!");
@@ -336,12 +343,20 @@ public class GameManager : MonoBehaviour
 
     public void ResolveHits(Entity myself, RaycastHit2D[] raycastHit, Vector2 attackDir, LayerMask enemyMask)
     {
-        StartCoroutine(ResolveHitsAttack(myself, raycastHit, attackDir, enemyMask));
+        StartCoroutine(ResolveAttackHits(myself, raycastHit, attackDir, enemyMask));
     }
 
-    public void Explosion(Transform explosionT, RaycastHit2D[] hits)
+    public void ResolveExplosion(Transform explosionT, RaycastHit2D[] hits)
     {
-        StartCoroutine(ResolveExplosionSlow(explosionT, hits));
+        StartCoroutine(ResolveExplosionHits(explosionT, hits));
+    }
+
+    public void ShootBomb(Transform shooter)
+    {
+        if (bombsPool.TryGetNextObject(shooter.position, shooter.rotation, out GameObject bomb))
+        {
+            bomb.SetActive(true);
+        }
     }
 
     public void ShootLaser()
@@ -354,10 +369,10 @@ public class GameManager : MonoBehaviour
             0f,
             Vector2.zero
         );
-        if (bulletPool.TryGetNextObject(origen - (Vector2)player.transform.right * 3, player.transform.rotation, out GameObject go))
+        if (bulletsPool.TryGetNextObject(origen - (Vector2)player.transform.right * 3, player.transform.rotation, out GameObject go))
         {
 
-            StartCoroutine(ResolveHitsLaser(hits));
+            StartCoroutine(ResolveLaserHits(hits));
             StartCoroutine(CleanBullet(go.transform, 1f));
         }
 
@@ -369,7 +384,7 @@ public class GameManager : MonoBehaviour
         bulletT.gameObject.SetActive(false);
     }
 
-    private IEnumerator<WaitForEndOfFrame> ResolveHitsLaser(RaycastHit2D[] hits)
+    private IEnumerator<WaitForEndOfFrame> ResolveLaserHits(RaycastHit2D[] hits)
     {
         var orderedList = hits.ToList().OrderBy(hit => Vector2.Distance(hit.transform.position, player.transform.position));
         foreach (var hit in orderedList)
@@ -392,7 +407,7 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    private IEnumerator<WaitForEndOfFrame> ResolveHitsAttack(Entity myself, RaycastHit2D[] raycastHits, Vector2 attackDir, LayerMask enemyMask)
+    private IEnumerator<WaitForEndOfFrame> ResolveAttackHits(Entity myself, RaycastHit2D[] raycastHits, Vector2 attackDir, LayerMask enemyMask)
     {
         var orderedList = raycastHits.ToList().OrderBy(item => Vector2.Distance(item.transform.position, myself.transform.position));
         foreach (var hit in orderedList)
@@ -455,12 +470,11 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    IEnumerator<WaitForEndOfFrame> ResolveExplosionSlow(Transform explosionT, RaycastHit2D[] hits)
+    IEnumerator<WaitForEndOfFrame> ResolveExplosionHits(Transform explosionT, RaycastHit2D[] hits)
     {
 
         Vector2 explosionPosition = explosionT.transform.position;
         var orderedList = hits.ToList().OrderBy(item => Vector2.Distance(item.transform.position, explosionPosition));
-        Destroy(explosionT.gameObject);
         foreach (var hit in orderedList)
         {
             try
