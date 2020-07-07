@@ -303,7 +303,7 @@ public class Enemy : Entity
         this.stats = stats;
         this.name = name;
         this.ID = ID;
-        this.Dummy = transform.GetComponent<Character>();
+        this.Dummy = GameManager.Instance.GetComponent<Character>();
         this.AttackAnimator = transform.Find("Attack_Effect").GetComponent<Animator>();
         this.rigidbody = transform.GetComponent<Rigidbody2D>();
         this.SetAnimVelocity(1);

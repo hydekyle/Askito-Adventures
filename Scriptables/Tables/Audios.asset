@@ -10,6 +10,6 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 0b9061b6d7af0474f8b8fdb41ffa9f1d, type: 3}
-  m_Name: AudioTable
+  m_Name: Audios
   m_EditorClassIdentifier: 
-  head_cut: {fileID: 0}
+  head_cut: {fileID: 8300000, guid: 50a49809f0e84ad41bd9b6b37b1fed36, type: 3}
