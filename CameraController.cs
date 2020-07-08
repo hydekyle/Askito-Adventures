@@ -65,8 +65,6 @@ public class CameraController : MonoBehaviour
 
     private void MoveBackground()
     {
-        Vector2 backgroundOffset = backgroundMaterial.mainTextureOffset;
-        Vector2 backgroundFarOffset = backgroundFarMaterial.mainTextureOffset;
         backgroundMaterial.SetTextureOffset("_MainTex", new Vector2(transform.position.x / 350f, 0));
         backgroundFarMaterial.SetTextureOffset("_MainTex", new Vector2(transform.position.x / 700f, 0));
     }

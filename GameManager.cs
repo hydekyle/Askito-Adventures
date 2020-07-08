@@ -8,7 +8,7 @@ using EZObjectPools;
 using UnityEngine.SceneManagement;
 
 public class GameManager : MonoBehaviour
-{
+{   
     public static GameManager Instance;
 
     public Dictionary<int, Entity> enemiesRef = new Dictionary<int, Entity>();
@@ -38,7 +38,7 @@ public class GameManager : MonoBehaviour
     EZObjectPool bulletPool;
     EZObjectPool enemyPool;
 
-    public AdmobManager admob;
+    //public AdmobManager admob;
 
     // GamePadState state;
     // GamePadState prevState;
@@ -55,7 +55,7 @@ public class GameManager : MonoBehaviour
 
     private void Initialize()
     {
-        admob = new AdmobManager();
+        //admob = new AdmobManager();
 
         enemies = new Enemy[maxEnemies];
 
@@ -69,8 +69,11 @@ public class GameManager : MonoBehaviour
 
     private void Update()
     {
-        Controls();
-        player.Update();
+        if (player != null)
+        {
+            Controls();
+            player.Update();
+        }
         foreach (Entity enemy in enemiesRef.Values) enemy.Update();
     }
 
@@ -312,26 +315,23 @@ public class GameManager : MonoBehaviour
         float xAxis = Input.GetAxis("Horizontal");
         float yAxis = Input.GetAxis("Vertical");
 
-        if (Input.GetButtonDown("Attack"))
+        if (Mathf.Abs(xAxis) > 0.0f || Mathf.Abs(yAxis) > 0.0f)
         {
-            player.Attack(new Vector2(xAxis, yAxis).normalized);
-            admob.TestReward();
-        }
-        else if (Mathf.Abs(xAxis) > 0.0f || Mathf.Abs(yAxis) > 0.0f)
-        {
-            player?.MoveToDirection(new Vector2(Input.GetAxis("Horizontal"), Input.GetAxis("Vertical")));
+            player.MoveToDirection(new Vector2(Input.GetAxis("Horizontal"), Input.GetAxis("Vertical")));
         }
         else player.Idle();
 
-        if (Input.GetButtonDown("Fire2")) player.ShootWeapon();
-        if (Input.GetKeyDown(KeyCode.F2) || Input.GetButtonDown("Jump")) SpawnEnemyRandom();
-        if (Input.GetButtonDown("Fire3")) player.ThrowBomb();
+        if      (Input.GetButtonDown("Attack")) player.Attack(new Vector2(xAxis, yAxis));
+        else if (Input.GetButtonDown("Fire2"))  player.Dash(new Vector2(xAxis, yAxis).normalized * 1.5f);
+        else if (Input.GetButtonDown("Jump"))   SpawnEnemyRandom();
+        else if (Input.GetButtonDown("Fire3"))  player.ThrowBomb();
+
 
 #if UNITY_EDITOR
-        if (Input.GetKeyDown(KeyCode.F1)) SetCheatStats();
-        if (Input.GetKeyDown(KeyCode.F2) || Input.GetButtonDown("Jump")) SpawnEnemyRandom();
-        if (Input.GetKeyDown(KeyCode.F3)) RandomEnemyAttack();
-        if (Input.GetKeyDown(KeyCode.F12)) RestartScene();
+        if (Input.GetKeyDown(KeyCode.F1))   SetCheatStats();
+        if (Input.GetButtonDown("Jump"))    SpawnEnemyRandom();
+        if (Input.GetKeyDown(KeyCode.F3))   RandomEnemyAttack();
+        if (Input.GetKeyDown(KeyCode.F12))  RestartScene();
 #endif
     }
 
@@ -396,56 +396,60 @@ public class GameManager : MonoBehaviour
     {
         foreach (var hit in raycastHit)
         {
-            if (hit.collider.isTrigger)
+            try
             {
-                if (CheckYProximity(hit.transform.position, myself.transform.position, attackDir))
+                if (hit.collider.isTrigger)
                 {
-                    LayerMask hitLayer = hit.transform.gameObject.layer;
-                    Vector2 hitDir = (hit.transform.position - myself.transform.position).normalized;
-                    byte enemyCount = 0;
-                    byte breakableCount = 0;
-
-                    if (hitLayer == LayerMask.NameToLayer("Breakable"))
+                    if (CheckYProximity(hit.transform.position, myself.transform.position, attackDir))
                     {
-                        GameManager.BreakBreakable(hit.transform, hitDir);
-                        breakableCount++;
-                    }
+                        LayerMask hitLayer = hit.transform.gameObject.layer;
+                        Vector2 hitDir = (hit.transform.position - myself.transform.position).normalized;
+                        byte enemyCount = 0;
+                        byte breakableCount = 0;
 
-                    else if (hitLayer == enemyMask)
-                    {
-                        if (myself.GetType() == typeof(Player)) // Si soy el jugador... (cambiar esto de sitio)
+                        if (hitLayer == LayerMask.NameToLayer("Breakable"))
                         {
-                            Entity enemy = GameManager.Instance.GetEnemyByName(hit.transform.name);
-                            if (enemy != null)
+                            GameManager.BreakBreakable(hit.transform, hitDir);
+                            breakableCount++;
+                        }
+
+                        else if (hitLayer == enemyMask)
+                        {
+                            if (myself.GetType() == typeof(Player)) // Si soy el jugador... (cambiar esto de sitio)
                             {
-                                myself.StrikeEntity(enemy, hitDir);
+                                Entity enemy = GameManager.Instance.GetEnemyByName(hit.transform.name);
+                                if (enemy != null)
+                                {
+                                    myself.StrikeEntity(enemy, hitDir);
+                                    enemyCount++;
+                                }
+                            }
+                            else
+                            {
+                                myself.StrikeEntity(GameManager.Instance.player, hitDir);
                                 enemyCount++;
                             }
                         }
-                        else
+                        else if (hitLayer == LayerMask.NameToLayer("Movible"))
                         {
-                            myself.StrikeEntity(GameManager.Instance.player, hitDir);
-                            enemyCount++;
+                            float distance = Vector2.Distance(myself.transform.position, hit.transform.position);
+                            hit.transform.GetComponent<Rigidbody2D>()?.AddForce(hitDir * 200 * myself.stats.strength / Mathf.Pow(distance, 3), ForceMode2D.Impulse);
                         }
-                    }
-                    else if (hitLayer == LayerMask.NameToLayer("Movible"))
-                    {
-                        float distance = Vector2.Distance(myself.transform.position, hit.transform.position);
-                        hit.transform.GetComponent<Rigidbody2D>()?.AddForce(hitDir * 200 * myself.stats.strength / Mathf.Pow(distance, 3), ForceMode2D.Impulse);
-                    }
 
-                    if (enemyCount > 0) // Retroceso al golpear
-                    {
-                        myself.ApplyImpulse(-attackDir / 2);
-                        myself.padVibration = 0.666f;
-                    }
-                    else if (enemyCount < breakableCount)
-                    {
-                        myself.padVibration = 0.333f;
-                    }
+                        if (enemyCount > 0) // Retroceso al golpear
+                        {
+                            myself.ApplyImpulse(-attackDir / 2);
+                            //myself.padVibration = 0.666f;
+                        }
+                        else if (enemyCount < breakableCount)
+                        {
+                            //myself.padVibration = 0.333f;
+                        }
 
+                    }
                 }
             }
+            catch { }
             yield return new WaitForEndOfFrame();
         }
     }

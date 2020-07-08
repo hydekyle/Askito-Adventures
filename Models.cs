@@ -27,7 +27,10 @@ public abstract class Entity
     public float lastTimeAttack = 0f;
     public float attackCD = 0.3f;
     public bool isActive = false;
-    public float padVibration = 0f;
+    //public float padVibration = 0f;
+
+    float lastTimeDash;
+    float dashCD = 0.66f;
 
     public Transform headT, armLeftT, armRightT, legLeftT, legRightT;
 
@@ -73,9 +76,19 @@ public abstract class Entity
         );
     }
 
-    public void ApplyImpulse(Vector2 attackDir)
+    public void Dash(Vector2 dashDir)
     {
-        rigidbody.velocity = attackDir.normalized * 5;
+        if (dashDir == Vector2.zero) return;
+        if (IsDashAvailable()) 
+        {
+            lastTimeDash = Time.time;
+            ApplyImpulse(dashDir);
+        }
+    }
+
+    public void ApplyImpulse(Vector2 dashDir)
+    {
+        rigidbody.velocity = dashDir * 10;
     }
 
     public void ShootWeapon()
@@ -97,16 +110,6 @@ public abstract class Entity
 
     public void Burst(Vector2 hitDir)
     {
-        var randomValue = UnityEngine.Random.Range(0, 3);
-        if (randomValue % 2 == 0)
-        {
-            Dismember(BodyLimb.ArmRight, hitDir);
-        }
-
-        Dismember(BodyLimb.ArmLeft, hitDir);
-
-        // Dismember(BodyLimb.LegLeft, hitDir);
-        // Dismember(BodyLimb.LegRight, hitDir);
         Dismember(BodyLimb.Head, hitDir);
         Die();
     }
@@ -194,9 +197,9 @@ public abstract class Entity
 
     public void PlayAnim(string clipName)
     {
+        if (clipName == "Walk") SetAnimVelocity(2);
+        else SetAnimVelocity(1);
         if (clipName == "Attack") SlashAnim();
-        if (clipName == "Alert") SetAnimVelocity(1);
-        else SetAnimVelocity(2);
         Dummy.Animator.StopPlayback();
         Dummy.Animator.Play(GameManager.GetAnimationName(clipName, Dummy.WeaponType));
     }
@@ -226,14 +229,21 @@ public abstract class Entity
         }
     }
 
+    bool IsDashAvailable()
+    {
+        return Time.time > lastTimeDash + dashCD;
+    }
+    
     bool IsAttackAvailable()
     {
         return Time.time > lastTimeAttack + attackCD;
     }
 
+    float attackTime = 0.5f;
     bool IsPlayerAttacking()
     {
-        return Dummy.Animator.GetCurrentAnimatorStateInfo(0).IsName(GameManager.GetAnimationName("Attack", Dummy.WeaponType));
+        return Time.time < lastTimeAttack + attackTime;
+        //return Dummy.Animator.GetCurrentAnimatorStateInfo(0).IsName(GameManager.GetAnimationName("Attack", Dummy.WeaponType));
     }
 
     public void Idle()
@@ -282,7 +292,7 @@ public class Player : Entity
         this.Dummy = transform.GetComponent<Character>();
         this.AttackAnimator = transform.Find("Attack_Effect").GetComponent<Animator>();
         this.rigidbody = transform.GetComponent<Rigidbody2D>();
-        this.SetAnimVelocity(2);
+        this.SetAnimVelocity(1);
         this.enemyMask = LayerMask.NameToLayer("Enemy");
         this.isActive = true;
     }
@@ -290,15 +300,15 @@ public class Player : Entity
 
     public override void Update()
     {
-        WorkVibration();
+        //WorkVibration();
         if (isActive) ClampMyself(true, true);
     }
 
-    private void WorkVibration()
-    {
-        padVibration = Mathf.Lerp(padVibration, 0.0f, Time.deltaTime * 15);
-        GameManager.Instance.PadVibration(padVibration);
-    }
+    // private void WorkVibration()
+    // {
+    //     padVibration = Mathf.Lerp(padVibration, 0.0f, Time.deltaTime * 15);
+    //     GameManager.Instance.PadVibration(padVibration);
+    // }
 
     public override void GetStrike(int strikeForce, Vector2 hitDir)
     {
