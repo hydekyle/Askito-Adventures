@@ -28,7 +28,7 @@ public class Shoot : MonoBehaviour
         LayerMask hitLayer = other.gameObject.layer;
         Vector2 hitDir = other.transform.position - transform.position;
 
-        if (Vector2.Distance(other.transform.position, initialPosition) > 10f) return;
+        if (Vector2.Distance(other.transform.position, initialPosition) > 30f) return;
 
         if (hitLayer == LayerMask.NameToLayer("Enemy"))
         {

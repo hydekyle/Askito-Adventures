@@ -61,9 +61,9 @@ public abstract class Entity
     {
         var raycastHit = Physics2D.CircleCastAll(
             transform.position + transform.right,
-            0.85f,
+            0.7f,
             attackDir.normalized,
-            0.6f
+            0.7f
         );
         GameManager.Instance.ResolveHits(
             this,
@@ -78,6 +78,11 @@ public abstract class Entity
         rigidbody.velocity = attackDir.normalized * 5;
     }
 
+    public void ShootWeapon()
+    {
+        GameManager.Instance.ShootWeapon(transform.position, transform.right);
+    }
+
     public void Die()
     {
         transform.gameObject.layer = LayerMask.NameToLayer("Ghost");
@@ -87,15 +92,21 @@ public abstract class Entity
 
     public void ThrowBomb()
     {
-        GameManager.Instance.ShootBomb(transform);
+        GameObject.Instantiate(GameManager.Instance.bombPrefab, transform.position, transform.rotation);
     }
 
     public void Burst(Vector2 hitDir)
     {
+        var randomValue = UnityEngine.Random.Range(0, 3);
+        if (randomValue % 2 == 0)
+        {
+            Dismember(BodyLimb.ArmRight, hitDir);
+        }
+
         Dismember(BodyLimb.ArmLeft, hitDir);
-        Dismember(BodyLimb.ArmRight, hitDir);
-        Dismember(BodyLimb.LegLeft, hitDir);
-        Dismember(BodyLimb.LegRight, hitDir);
+
+        // Dismember(BodyLimb.LegLeft, hitDir);
+        // Dismember(BodyLimb.LegRight, hitDir);
         Dismember(BodyLimb.Head, hitDir);
         Die();
     }
@@ -124,18 +135,28 @@ public abstract class Entity
                 oldLimb = headT;
                 break;
         }
-        GameObject newGO = GameObject.Instantiate(oldLimb.gameObject);
-        Transform newLimb = newGO.transform;
+        // GameObject newGO = GameObject.Instantiate(oldLimb.gameObject);
+        // Transform newLimb = newGO.transform;
         oldLimb.gameObject.SetActive(false);
 
-        newLimb.position = oldLimb.position;
-        newLimb.localScale = oldLimb.lossyScale;
-        newLimb.rotation = oldLimb.rotation;
-        Rigidbody2D rb = newLimb.gameObject.AddComponent<Rigidbody2D>();
-        newGO.SetActive(true);
+        // newLimb.position = oldLimb.position;
+        // newLimb.localScale = oldLimb.lossyScale;
+        // newLimb.rotation = oldLimb.rotation;
+        // Rigidbody2D rb = newLimb.gameObject.AddComponent<Rigidbody2D>();
+        // newGO.SetActive(true);
 
         if (limb == BodyLimb.Head)
         {
+            GameObject newGO = GameObject.Instantiate(oldLimb.gameObject);
+            Transform newLimb = newGO.transform;
+
+            newLimb.position = oldLimb.position;
+            newLimb.localScale = oldLimb.lossyScale;
+            newLimb.rotation = oldLimb.rotation;
+            Rigidbody2D rb = newLimb.gameObject.AddComponent<Rigidbody2D>();
+            newGO.SetActive(true);
+            GameObject.Destroy(newLimb.gameObject, 2.5f);
+
             rb.gravityScale = 10f;
             rb.AddForce(Vector2.up * 10 + hitDir * 5, ForceMode2D.Impulse);
 
@@ -153,11 +174,11 @@ public abstract class Entity
         }
         else
         {
-            rb.gravityScale = UnityEngine.Random.Range(5f, 10f);
+            //rb.gravityScale = UnityEngine.Random.Range(5f, 10f);
             float force = UnityEngine.Random.Range(5f, 10f);
-            rb.AddForce(Vector2.up * 10 + hitDir * force, ForceMode2D.Impulse);
+            //rb.AddForce(Vector2.up * 10 + hitDir * force, ForceMode2D.Impulse);
         }
-        GameObject.Destroy(newLimb.gameObject, 2.5f);
+
     }
 
     public void StrikeEntity(Entity entity, Vector2 hitDir)
@@ -303,7 +324,7 @@ public class Enemy : Entity
         this.stats = stats;
         this.name = name;
         this.ID = ID;
-        this.Dummy = GameManager.Instance.GetComponent<Character>();
+        this.Dummy = transform.GetComponent<Character>();
         this.AttackAnimator = transform.Find("Attack_Effect").GetComponent<Animator>();
         this.rigidbody = transform.GetComponent<Rigidbody2D>();
         this.SetAnimVelocity(1);
