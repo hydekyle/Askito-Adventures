@@ -25,12 +25,12 @@ public abstract class Entity
     public string name;
     public int health = 9;
     public float lastTimeAttack = 0f;
-    public float attackCD = 0.3f;
+    public float attackCD = 0.4f;
     public bool isActive = false;
     //public float padVibration = 0f;
 
     float lastTimeDash;
-    float dashCD = 0.66f;
+    float dashCD = 0.5f;
 
     public Transform headT, armLeftT, armRightT, legLeftT, legRightT;
 
@@ -49,23 +49,12 @@ public abstract class Entity
 
     public abstract void Update();
 
-    public void Attack(Vector2 attackDir)
-    {
-        if (IsAttackAvailable())
-        {
-            lastTimeAttack = Time.time;
-            attackDirection = attackDir == Vector2.zero ? (Vector2)transform.right : attackDir;
-            ApplyImpulse(attackDir);
-            PlayAnim("Attack"); // La animación llamará a CastAttack
-        }
-    }
-
     public void CastAttack(Vector2 attackDir)
     {
         var raycastHit = Physics2D.CircleCastAll(
             transform.position + transform.right,
-            0.7f,
-            attackDir.normalized,
+            1,
+            attackDir,
             0.7f
         );
         GameManager.Instance.ResolveHits(
@@ -75,12 +64,32 @@ public abstract class Entity
             enemyMask
         );
     }
+    
+    public void Attack(Vector2 attackDir)
+    {
+        if (IsAttackAvailable())
+        {
+            lastTimeAttack = Time.time;
+            attackDirection = attackDir == Vector2.zero ? (Vector2)transform.right : attackDir;
+            ApplyImpulse(attackDir / 2);
+            PlayAnim("Attack"); // La animación llamará a CastAttack
+        }
+    }
+
+    public void AttackDash()
+    {
+        lastTimeAttack = lastTimeDash = Time.time;
+        ApplyImpulse(rigidbody.velocity.normalized * 1.3f);
+        Dummy.Animator.Play("AttackLunge1H");
+        SlashAnim();
+    }
 
     public void Dash(Vector2 dashDir)
     {
         if (dashDir == Vector2.zero) return;
         if (IsDashAvailable()) 
         {
+            PlayAnim("Dash");
             lastTimeDash = Time.time;
             ApplyImpulse(dashDir);
         }
@@ -105,7 +114,7 @@ public abstract class Entity
 
     public void ThrowBomb()
     {
-        GameObject.Instantiate(GameManager.Instance.bombPrefab, transform.position, transform.rotation);
+        GameManager.Instance.ShootBomb(transform);
     }
 
     public void Burst(Vector2 hitDir)
@@ -196,7 +205,14 @@ public abstract class Entity
     }
 
     public void PlayAnim(string clipName)
-    {
+    {   
+        if (clipName == "Dash") Dummy.Animator.Play(clipName);
+        else if (Time.time < lastTimeDash + dashCD / 2) 
+        {
+            if (clipName == "Attack") AttackDash();
+            return;
+        }
+
         if (clipName == "Walk") SetAnimVelocity(2);
         else SetAnimVelocity(1);
         if (clipName == "Attack") SlashAnim();
@@ -212,7 +228,7 @@ public abstract class Entity
     public void MoveToDirection(Vector2 direction)
     {
         rigidbody.velocity = Vector2.Lerp(rigidbody.velocity, direction, Time.deltaTime * stats.velocity);
-        if (!IsPlayerAttacking())
+        if (IsMoveAvailable())
         {
             PlayAnim("Walk");
             transform.position = Vector2.Lerp(
@@ -229,8 +245,15 @@ public abstract class Entity
         }
     }
 
+    bool IsMoveAvailable()
+    {
+        if (!IsDashAvailable()) return false;
+        return Time.time > lastTimeAttack + attackCD * 0.99f;
+    }
+
     bool IsDashAvailable()
     {
+        if (!IsAttackAvailable()) return false;
         return Time.time > lastTimeDash + dashCD;
     }
     

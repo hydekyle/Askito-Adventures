@@ -33,10 +33,14 @@ public class GameManager : MonoBehaviour
     public Transform mapEnemies;
     public Transform mapBreakables;
     public GameObject bombPrefab;
+    public GameObject bombEffectPrefab;
     public GameObject shootPrefab;
 
-    EZObjectPool bulletPool;
-    EZObjectPool enemyPool;
+    EZObjectPool bulletsPool;
+    EZObjectPool enemiesPool;
+    EZObjectPool bombsPool;
+    [HideInInspector]
+    public EZObjectPool bombEffectPool;
 
     //public AdmobManager admob;
 
@@ -59,8 +63,10 @@ public class GameManager : MonoBehaviour
 
         enemies = new Enemy[maxEnemies];
 
-        bulletPool = EZObjectPool.CreateObjectPool(shootPrefab, "Shoot1", 20, true, true, true);
-        enemyPool = EZObjectPool.CreateObjectPool(enemyPrefab, "Enemies", 2, true, true, true);
+        bulletsPool = EZObjectPool.CreateObjectPool(shootPrefab, "Shoot1", 20, true, true, true);
+        enemiesPool = EZObjectPool.CreateObjectPool(enemyPrefab, "Enemies", maxEnemies, true, true, true);
+        bombsPool = EZObjectPool.CreateObjectPool(bombPrefab, "Bombs", 1, true, true, true);
+        bombEffectPool = EZObjectPool.CreateObjectPool(bombEffectPrefab, "BombEffect", 1, true, true, true);
 
         FixMapSpriteOrders();
         AddDefaultPlayer("Player");
@@ -94,7 +100,7 @@ public class GameManager : MonoBehaviour
     public void SpawnEnemyRandom()
     {
         Vector3 randomPos = new Vector3(UnityEngine.Random.Range(-2f, 2f), UnityEngine.Random.Range(-2f, 2f), 0);
-        if (enemyPool.TryGetNextObject(player.transform.position + randomPos, Quaternion.identity, out GameObject go))
+        if (enemiesPool.TryGetNextObject(player.transform.position + randomPos, Quaternion.identity, out GameObject go))
         {
             int enemyID = GetNextEnemyID();
             string enemyName = "Enemy " + enemyID;
@@ -187,10 +193,18 @@ public class GameManager : MonoBehaviour
 
     public void ShootWeapon(Vector2 sPosition, Vector2 sDirection)
     {
-        if (bulletPool.TryGetNextObject(sPosition, transform.rotation, out GameObject go))
+        if (bulletsPool.TryGetNextObject(sPosition, transform.rotation, out GameObject go))
         {
             go.SetActive(true);
             go.GetComponent<Rigidbody2D>()?.AddForce(sDirection.normalized * Time.deltaTime / 2, ForceMode2D.Impulse);
+        }
+    }
+
+    public void ShootBomb(Transform shooter)
+    {
+        if (bombsPool.TryGetNextObject(shooter.position, shooter.rotation, out GameObject bomb))
+        {
+            bomb.SetActive(true);
         }
     }
 
@@ -326,6 +340,8 @@ public class GameManager : MonoBehaviour
         else if (Input.GetButtonDown("Jump"))   SpawnEnemyRandom();
         else if (Input.GetButtonDown("Fire3"))  player.ThrowBomb();
 
+        if (Input.GetKeyDown(KeyCode.Escape)) SceneManager.LoadScene(0);
+
 
 #if UNITY_EDITOR
         if (Input.GetKeyDown(KeyCode.F1))   SetCheatStats();
@@ -352,13 +368,12 @@ public class GameManager : MonoBehaviour
 
     public void ResolveExplosion(Transform explosionT, RaycastHit2D[] hits)
     {
-        StartCoroutine(ResolveExplosionSlow(explosionT, hits));
+        StartCoroutine(ResolveExplosionHits(explosionT, hits));
     }
 
-    IEnumerator<WaitForEndOfFrame> ResolveExplosionSlow(Transform explosionT, RaycastHit2D[] hits)
+    IEnumerator<WaitForEndOfFrame> ResolveExplosionHits(Transform explosionT, RaycastHit2D[] hits)
     {
         Vector2 explosionPosition = explosionT.transform.position;
-        Destroy(explosionT.gameObject);
         foreach (var hit in hits)
         {
             try
