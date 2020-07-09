@@ -8,7 +8,7 @@ using EZObjectPools;
 using UnityEngine.SceneManagement;
 
 public class GameManager : MonoBehaviour
-{   
+{
     public static GameManager Instance;
 
     public Dictionary<int, Entity> enemiesRef = new Dictionary<int, Entity>();
@@ -350,19 +350,19 @@ public class GameManager : MonoBehaviour
         }
         else player.Idle();
 
-        if      (Input.GetButtonDown("Attack")) player.Attack(new Vector2(xAxis, yAxis));
-        else if (Input.GetButtonDown("Fire2"))  player.Dash(new Vector2(xAxis, yAxis).normalized * 1.5f);
-        else if (Input.GetButtonDown("Jump"))   SpawnEnemyRandom();
-        else if (Input.GetButtonDown("Fire3"))  player.ThrowBomb();
+        if (Input.GetButtonDown("Attack")) player.Attack(new Vector2(xAxis, yAxis));
+        else if (Input.GetButtonDown("Fire2")) player.Dash(new Vector2(xAxis, yAxis).normalized * 1.5f);
+        else if (Input.GetButtonDown("Jump")) SpawnEnemyRandom();
+        else if (Input.GetButtonDown("Fire3")) player.ThrowBomb();
 
         if (Input.GetKeyDown(KeyCode.Escape)) SceneManager.LoadScene(0);
 
 
 #if UNITY_EDITOR
-        if (Input.GetKeyDown(KeyCode.F1))   SetCheatStats();
-        if (Input.GetButtonDown("Jump"))    SpawnEnemyRandom();
-        if (Input.GetKeyDown(KeyCode.F3))   RandomEnemyAttack();
-        if (Input.GetKeyDown(KeyCode.F12))  RestartScene();
+        if (Input.GetKeyDown(KeyCode.F1)) SetCheatStats();
+        if (Input.GetButtonDown("Jump")) SpawnEnemyRandom();
+        if (Input.GetKeyDown(KeyCode.F3)) RandomEnemyAttack();
+        if (Input.GetKeyDown(KeyCode.F12)) RestartScene();
 #endif
     }
 
