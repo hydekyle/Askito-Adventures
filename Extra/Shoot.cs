@@ -40,7 +40,7 @@ public class Shoot : MonoBehaviour
         }
         else if (hitLayer == LayerMask.NameToLayer("Breakable"))
         {
-            GameManager.BreakBreakable(other.transform, hitDir);
+            GameManager.Instance.BreakBreakable(other.transform, hitDir);
         }
     }
 }

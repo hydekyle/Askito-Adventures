@@ -28,17 +28,12 @@ public class GameManager : MonoBehaviour
 
     public GameObject enemyPrefab;
 
-    public GameObject breakingBarrelPrefab;
-
     public Transform mapEnemies;
     public Transform mapBreakables;
-    public GameObject bombPrefab;
-    public GameObject bombEffectPrefab;
-    public GameObject shootPrefab;
 
-    EZObjectPool bulletsPool;
-    EZObjectPool enemiesPool;
-    EZObjectPool bombsPool;
+    public GameObject breakingBarrelPrefab, bombPrefab, bombEffectPrefab, shootPrefab, hitPrefab;
+    EZObjectPool barrelsPool, bulletsPool, enemiesPool, bombsPool, hitsPool;
+
     [HideInInspector]
     public EZObjectPool bombEffectPool;
 
@@ -67,6 +62,8 @@ public class GameManager : MonoBehaviour
         enemiesPool = EZObjectPool.CreateObjectPool(enemyPrefab, "Enemies", maxEnemies, true, true, true);
         bombsPool = EZObjectPool.CreateObjectPool(bombPrefab, "Bombs", 1, true, true, true);
         bombEffectPool = EZObjectPool.CreateObjectPool(bombEffectPrefab, "BombEffect", 1, true, true, true);
+        hitsPool = EZObjectPool.CreateObjectPool(hitPrefab, "HitEffect", 6, true, true, true);
+        barrelsPool = EZObjectPool.CreateObjectPool(breakingBarrelPrefab, "Barrels", 3, true, true, true);
 
         FixMapSpriteOrders();
         AddDefaultPlayer("Player");
@@ -208,26 +205,44 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    public static void BreakBreakable(Transform breakableT, Vector2 hitDir)
+    public void BreakBreakable(Transform oldBreakable, Vector2 hitDir)
     {
-        if (breakableT.name.Split(' ')[0] == "Barrel")
+        if (oldBreakable.name.Split(' ')[0] == "Barrel")
         {
-            int breakableSortingOrder = breakableT.GetComponent<SpriteRenderer>().sortingOrder;
-            var go = GameObject.Instantiate(GameManager.Instance.breakingBarrelPrefab);
-            go.transform.position = breakableT.position;
-            GameObject.Destroy(breakableT.gameObject);
-            go.gameObject.SetActive(true);
-            Transform pieceTop = go.transform.GetChild(0);
-            Transform pieceBot = go.transform.GetChild(1);
-            pieceTop.GetComponent<SpriteRenderer>().sortingOrder = pieceBot.GetComponent<SpriteRenderer>().sortingOrder = breakableSortingOrder;
-            pieceTop.GetComponent<Rigidbody2D>().AddForce((hitDir * 8 + Vector2.up * 6) * 40, ForceMode2D.Force);
-            pieceBot.GetComponent<Rigidbody2D>().AddForce((hitDir * 5 + Vector2.up) * 30, ForceMode2D.Force);
-            GameObject.Destroy(go, 3f);
+            int breakableSortingOrder = oldBreakable.GetComponent<SpriteRenderer>().sortingOrder;
+            if (barrelsPool.TryGetNextObject(oldBreakable.position, oldBreakable.rotation, out GameObject newBreaking))
+            {
+                newBreaking.transform.position = oldBreakable.position;
+                oldBreakable.gameObject.SetActive(false);
+                StartCoroutine(ReciclateBarrel(newBreaking, hitDir, breakableSortingOrder));
+            }
         }
         else
         {
-            Destroy(breakableT.gameObject);
+            Destroy(oldBreakable.gameObject);
         }
+    }
+
+    public void ShowHitEffect(Vector2 hitPosition)
+    {
+        if (hitsPool.TryGetNextObject(hitPosition, transform.rotation, out GameObject hitEffect))
+        {
+            hitEffect.SetActive(true);
+        }
+    }
+
+    IEnumerator<WaitForSeconds> ReciclateBarrel(GameObject newBreaking, Vector2 hitDir, int sortingOrder)
+    {
+        Transform pieceTop = newBreaking.transform.GetChild(0);
+        Transform pieceBot = newBreaking.transform.GetChild(1);
+        pieceBot.localPosition = Vector3.zero;
+        pieceTop.localPosition = Vector3.zero;
+        newBreaking.SetActive(true);
+        pieceTop.GetComponent<SpriteRenderer>().sortingOrder = pieceBot.GetComponent<SpriteRenderer>().sortingOrder = sortingOrder;
+        pieceTop.GetComponent<Rigidbody2D>().AddForce((hitDir * 8 + Vector2.up * 6) * 40, ForceMode2D.Force);
+        pieceBot.GetComponent<Rigidbody2D>().AddForce((hitDir * 5 + Vector2.up) * 30, ForceMode2D.Force);
+        yield return new WaitForSeconds(3f);
+        newBreaking.SetActive(false);
     }
 
     IEnumerator<WaitForSeconds> ReciclateEntity(Entity entity)
@@ -424,7 +439,7 @@ public class GameManager : MonoBehaviour
 
                         if (hitLayer == LayerMask.NameToLayer("Breakable"))
                         {
-                            GameManager.BreakBreakable(hit.transform, hitDir);
+                            GameManager.Instance.BreakBreakable(hit.transform, hitDir);
                             breakableCount++;
                         }
 
@@ -435,6 +450,7 @@ public class GameManager : MonoBehaviour
                                 Entity enemy = GameManager.Instance.GetEnemyByName(hit.transform.name);
                                 if (enemy != null)
                                 {
+                                    ShowHitEffect(hit.transform.position);
                                     myself.StrikeEntity(enemy, hitDir);
                                     enemyCount++;
                                 }
@@ -447,8 +463,9 @@ public class GameManager : MonoBehaviour
                         }
                         else if (hitLayer == LayerMask.NameToLayer("Movible"))
                         {
+                            ShowHitEffect(hit.transform.position);
                             float distance = Vector2.Distance(myself.transform.position, hit.transform.position);
-                            hit.transform.GetComponent<Rigidbody2D>()?.AddForce(hitDir * 200 * myself.stats.strength / Mathf.Pow(distance, 3), ForceMode2D.Impulse);
+                            hit.transform.GetComponent<Rigidbody2D>()?.AddForce(hitDir * 300 * myself.stats.strength / Mathf.Pow(distance, 3), ForceMode2D.Impulse);
                         }
 
                         if (enemyCount > 0) // Retroceso al golpear

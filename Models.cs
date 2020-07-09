@@ -53,9 +53,9 @@ public abstract class Entity
     {
         var raycastHit = Physics2D.CircleCastAll(
             transform.position + transform.right,
-            1,
-            attackDir,
-            0.7f
+            1.5f,
+            Vector2.up * attackDir.y,
+            0.5f
         );
         GameManager.Instance.ResolveHits(
             this,
