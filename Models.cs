@@ -64,7 +64,7 @@ public abstract class Entity
             enemyMask
         );
     }
-    
+
     public void Attack(Vector2 attackDir)
     {
         if (IsAttackAvailable())
@@ -87,7 +87,7 @@ public abstract class Entity
     public void Dash(Vector2 dashDir)
     {
         if (dashDir == Vector2.zero) return;
-        if (IsDashAvailable()) 
+        if (IsDashAvailable())
         {
             PlayAnim("Dash");
             lastTimeDash = Time.time;
@@ -205,9 +205,9 @@ public abstract class Entity
     }
 
     public void PlayAnim(string clipName)
-    {   
+    {
         if (clipName == "Dash") Dummy.Animator.Play(clipName);
-        else if (Time.time < lastTimeDash + dashCD / 2) 
+        else if (Time.time < lastTimeDash + dashCD / 2)
         {
             if (clipName == "Attack") AttackDash();
             return;
@@ -228,6 +228,9 @@ public abstract class Entity
     public void MoveToDirection(Vector2 direction)
     {
         rigidbody.velocity = Vector2.Lerp(rigidbody.velocity, direction, Time.deltaTime * stats.velocity);
+
+        if (Mathf.Abs(direction.x) > 0.0f) SetOrientation(direction.x);
+
         if (IsMoveAvailable())
         {
             PlayAnim("Walk");
@@ -237,11 +240,6 @@ public abstract class Entity
                 Time.deltaTime * stats.velocity
             );
 
-            if (Mathf.Abs(direction.x) > 0.0f)
-            {
-                SetOrientation(direction.x);
-                CameraController.Instance.ZoomOption(ZoomOptions.Normal);
-            }
         }
     }
 
@@ -256,7 +254,7 @@ public abstract class Entity
         if (!IsAttackAvailable()) return false;
         return Time.time > lastTimeDash + dashCD;
     }
-    
+
     bool IsAttackAvailable()
     {
         return Time.time > lastTimeAttack + attackCD;
@@ -271,9 +269,9 @@ public abstract class Entity
 
     public void Idle()
     {
-        if (!IsPlayerAttacking() && IsAttackAvailable())
+        if (IsAttackAvailable() && !IsPlayerAttacking())
         {
-            rigidbody.velocity = Vector2.zero;
+            if (IsDashAvailable()) rigidbody.velocity = Vector2.zero;
             PlayAnim("Alert");
         }
     }

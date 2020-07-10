@@ -6,10 +6,13 @@ using Assets.FantasyHeroes.Scripts;
 using EZObjectPools;
 //using XInputDotNetPure;
 using UnityEngine.SceneManagement;
+using Doublsb.Dialog;
 
 public class GameManager : MonoBehaviour
 {
     public static GameManager Instance;
+
+    public DialogManager dialogManager;
 
     public Dictionary<int, Entity> enemiesRef = new Dictionary<int, Entity>();
     public Enemy[] enemies;
@@ -68,6 +71,18 @@ public class GameManager : MonoBehaviour
         FixMapSpriteOrders();
         AddDefaultPlayer("Player");
         GenerateMapEnemiesRefs();
+    }
+
+    private void Start()
+    {
+        string text = string.Format("Soy Askito y soy...{0} todo-poderoso", "/click/");
+        ShowDialog(text);
+    }
+
+    public void ShowDialog(string text)
+    {
+        DialogData dialogData = new DialogData(text, "Askito");
+        dialogManager.Show(dialogData);
     }
 
     private void Update()

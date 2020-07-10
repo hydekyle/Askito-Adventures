@@ -25,7 +25,6 @@ public class Db : MonoBehaviour
             {
                 Debug.LogWarning("No me puedo conectar al servidor: " + request.error);
             }
-
         }
     }
 
