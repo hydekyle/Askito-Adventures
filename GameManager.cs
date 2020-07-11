@@ -216,7 +216,8 @@ public class GameManager : MonoBehaviour
 
     public void BreakBreakable(Transform oldBreakable, Vector2 hitDir)
     {
-        if (oldBreakable.name.Split(' ')[0] == "Barrel")
+        string breakableName = oldBreakable.name.Split(' ')[0];
+        if (breakableName.Equals("Barrel"))
         {
             int breakableSortingOrder = oldBreakable.GetComponent<SpriteRenderer>().sortingOrder;
             if (barrelsPool.TryGetNextObject(oldBreakable.position, oldBreakable.rotation, out GameObject newBreaking))
@@ -228,7 +229,7 @@ public class GameManager : MonoBehaviour
         }
         else
         {
-            Destroy(oldBreakable.gameObject);
+            //Destroy(oldBreakable.gameObject);
         }
     }
 
@@ -377,7 +378,7 @@ public class GameManager : MonoBehaviour
 
     public static bool CheckYProximity(Vector2 hitPosition, Vector2 attackPosition, Vector2 attackDir)
     {
-        return Mathf.Abs(hitPosition.y - (attackPosition.y + attackDir.y)) < 1f;
+        return Mathf.Abs(hitPosition.y - (attackPosition.y + attackDir.y)) < 1.33f;
     }
 
     public void VibrationForce(long force)

@@ -65,9 +65,9 @@ public abstract class Entity
     {
         var raycastHit = Physics2D.CircleCastAll(
             transform.position + transform.right,
-            1.5f,
-            Vector2.up * attackDir.y,
-            0.5f
+            1f,
+            attackDir,
+            0.25f
         );
         GameManager.Instance.ResolveHits(
             this,
@@ -234,10 +234,9 @@ public abstract class Entity
     {
         rigidbody.velocity = Vector2.Lerp(rigidbody.velocity, direction, Time.deltaTime * stats.velocity);
 
-        if (Mathf.Abs(direction.x) > 0.0f) SetOrientation(direction.x);
-
         if (IsMoveAvailable())
         {
+            if (Mathf.Abs(direction.x) > 0.0f) SetOrientation(direction.x);
             PlayAnim("Walk");
             transform.position = Vector2.Lerp(
                 GetActualPosition(),
