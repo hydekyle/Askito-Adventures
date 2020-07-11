@@ -9,11 +9,13 @@ public struct Stats
 }
 
 public enum BodyLimb { Head, LegLeft, LegRight, ArmLeft, ArmRight }
+public enum Status { Alive, Dead }
 
 [Serializable]
 public abstract class Entity
 {
     public int ID;
+    public Status status = Status.Dead;
 
     public Character Dummy;
     public Transform transform;
@@ -34,9 +36,19 @@ public abstract class Entity
 
     public Transform headT, armLeftT, armRightT, legLeftT, legRightT;
 
+    public abstract void Die();
+
+    public void Spawn(Vector2 position)
+    {
+        this.health = 9;
+        this.status = Status.Alive;
+        this.transform.position = position;
+        this.transform.gameObject.SetActive(true);
+    }
+
     public abstract void GetStrike(int strikeForce, Vector2 hitDir);
 
-    public void Start()
+    public void SaveTransformReferences()
     {
         Transform pelvisT = transform.Find("Animation").Find("Pelvis");
         Transform torsoT = pelvisT.Find("Torso");
@@ -103,13 +115,6 @@ public abstract class Entity
     public void ShootWeapon()
     {
         GameManager.Instance.ShootWeapon(transform.position, transform.right);
-    }
-
-    public void Die()
-    {
-        transform.gameObject.layer = LayerMask.NameToLayer("Ghost");
-        PlayAnim("Die");
-        GameManager.Instance.RemoveEntity(this);
     }
 
     public void ThrowBomb()
@@ -316,6 +321,12 @@ public class Player : Entity
         this.SetAnimVelocity(1);
         this.enemyMask = LayerMask.NameToLayer("Enemy");
         this.isActive = true;
+        this.SaveTransformReferences();
+    }
+
+    public override void Die()
+    {
+        Debug.Log("Legends never dies");
     }
 
 
@@ -360,6 +371,14 @@ public class Enemy : Entity
         this.rigidbody = transform.GetComponent<Rigidbody2D>();
         this.SetAnimVelocity(1);
         this.enemyMask = LayerMask.NameToLayer("Player");
+        this.SaveTransformReferences();
+    }
+
+    public override void Die()
+    {
+        transform.gameObject.layer = LayerMask.NameToLayer("Ghost");
+        PlayAnim("Die");
+        GameManager.Instance.RemoveEnemy(this);
     }
 
     public override void Update()

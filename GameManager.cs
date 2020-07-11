@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System.Linq;
+using System.Collections;
 using System;
 using System.Collections.Generic;
 using UnityEngine;
@@ -14,7 +15,7 @@ public class GameManager : MonoBehaviour
 
     public DialogManager dialogManager;
 
-    public Dictionary<int, Entity> enemiesRef = new Dictionary<int, Entity>();
+    //public Dictionary<int, Entity> enemiesRef = new Dictionary<int, Entity>();
     public Enemy[] enemies;
 
     public Player player;
@@ -35,7 +36,7 @@ public class GameManager : MonoBehaviour
     public Transform mapBreakables;
 
     public GameObject breakingBarrelPrefab, bombPrefab, bombEffectPrefab, shootPrefab, hitPrefab;
-    EZObjectPool barrelsPool, bulletsPool, enemiesPool, bombsPool, hitsPool;
+    EZObjectPool barrelsPool, bulletsPool, bombsPool, hitsPool;
 
     [HideInInspector]
     public EZObjectPool bombEffectPool;
@@ -45,8 +46,11 @@ public class GameManager : MonoBehaviour
     // GamePadState state;
     // GamePadState prevState;
 
+    public bool gameIsActive = false;
     public int maxEnemies = 10;
-    int enemyCounterID = 0;
+    int enemyCounter = 0;
+
+    Transform[] enemiesT;
 
     private void Awake()
     {
@@ -58,25 +62,38 @@ public class GameManager : MonoBehaviour
     private void Initialize()
     {
         //admob = new AdmobManager();
+        GeneratePools();
+        SetMapSpriteOrders();
+        AddDefaultPlayer("Player");
+    }
 
-        enemies = new Enemy[maxEnemies];
-
+    private void GeneratePools()
+    {
         bulletsPool = EZObjectPool.CreateObjectPool(shootPrefab, "Shoot1", 20, true, true, true);
-        enemiesPool = EZObjectPool.CreateObjectPool(enemyPrefab, "Enemies", maxEnemies, true, true, true);
         bombsPool = EZObjectPool.CreateObjectPool(bombPrefab, "Bombs", 1, true, true, true);
         bombEffectPool = EZObjectPool.CreateObjectPool(bombEffectPrefab, "BombEffect", 1, true, true, true);
         hitsPool = EZObjectPool.CreateObjectPool(hitPrefab, "HitEffect", 6, true, true, true);
         barrelsPool = EZObjectPool.CreateObjectPool(breakingBarrelPrefab, "Barrels", 3, true, true, true);
 
-        FixMapSpriteOrders();
-        AddDefaultPlayer("Player");
-        GenerateMapEnemiesRefs();
-    }
+        enemiesT = new Transform[maxEnemies];
+        enemies = new Enemy[maxEnemies];
 
-    private void Start()
-    {
-        string text = string.Format("Soy Askito y soy...{0} todo-poderoso", "/click/");
-        ShowDialog(text);
+        for (var x = 0; x < maxEnemies; x++)
+        {
+            var newEnemy = Instantiate(enemyPrefab, Vector3.zero, transform.rotation);
+
+            string enemyName = String.Concat("Enemy ", x.ToString());
+            newEnemy.name = enemyName;
+            enemies[x] = new Enemy(
+                    newEnemy.transform,
+                    new Stats() { strength = 1, velocity = 1, life = 1 },
+                    enemyName,
+                    x
+                );
+
+            newEnemy.transform.parent = mapEnemies;
+            enemiesT[x] = newEnemy.transform;
+        }
     }
 
     public void ShowDialog(string text)
@@ -87,46 +104,40 @@ public class GameManager : MonoBehaviour
 
     private void Update()
     {
-        if (player != null)
+        if (gameIsActive) Controls();
+    }
+
+    private void FixedUpdate()
+    {
+        player.Update();
+        for (var x = 0; x < enemies.Length; x++)
         {
-            Controls();
-            player.Update();
+            Enemy enemy = enemies[x];
+            if (enemy.status == Status.Alive) enemy.Update();
         }
-        foreach (Entity enemy in enemiesRef.Values) enemy.Update();
     }
 
     private int GetNextEnemyID()
     {
-        if (enemyCounterID + 1 >= enemies.Length) enemyCounterID = 0;
-        else enemyCounterID++;
-
-        if (enemiesRef.TryGetValue(enemyCounterID, out Entity storedEntity))
-        {
-            Debug.LogWarningFormat("La entidad {0} aún existe", storedEntity.name);
-            storedEntity.Burst(Vector2.zero);
-        }
-
-        return enemyCounterID;
+        return enemyCounter + 1 < enemies.Length ? enemyCounter : 0;
     }
 
     public void SpawnEnemyRandom()
     {
-        Vector3 randomPos = new Vector3(UnityEngine.Random.Range(-2f, 2f), UnityEngine.Random.Range(-2f, 2f), 0);
-        if (enemiesPool.TryGetNextObject(player.transform.position + randomPos, Quaternion.identity, out GameObject go))
+        int enemyID = GetNextEnemyID();
+        Enemy enemy = enemies[enemyID];
+
+        Vector2 randomPos = new Vector2(UnityEngine.Random.Range(-6f, 6f), UnityEngine.Random.Range(-6f, 6f));
+
+        Vector2 finalPos = (Vector2)player.transform.position + randomPos;
+
+        if (enemy.status != Status.Alive)
         {
-            int enemyID = GetNextEnemyID();
-            string enemyName = "Enemy " + enemyID;
-
-            Enemy enemy = new Enemy(
-                go.transform,
-                new Stats() { life = 1, strength = 1, velocity = 1 },
-                enemyName,
-                enemyID
-            );
-
-            go.name = enemyName;
-            enemy.Start();
-            AddEnemyRefs(enemyID, enemy);
+            enemy.Spawn(finalPos);
+        }
+        else
+        {
+            enemies.ToList().Find(e => e.status == Status.Dead)?.Spawn(finalPos);
         }
     }
 
@@ -143,35 +154,22 @@ public class GameManager : MonoBehaviour
                 enemyID
             );
             enemyT.name = enemyName;
-            AddEnemyRefs(enemyID, enemy);
-            enemy.Start();
+            enemy.SaveTransformReferences();
         }
     }
 
-    public void AddEnemyRefs(int enemyID, Enemy enemy)
+    public void DeleteEnemy(int enemyID)
     {
-        enemiesRef.Add(enemyID, enemy);
-        enemies[enemyID] = enemy;
+        enemies[enemyID].status = Status.Dead;
     }
 
-    public void DeleteEnemyRefs(int enemyID)
-    {
-        enemiesRef.Remove(enemyID);
-        enemies[enemyID] = null;
-    }
-
-    private void FixMapSpriteOrders()
+    private void SetMapSpriteOrders()
     {
         foreach (Transform breakablesT in mapBreakables)
         {
             SpriteRenderer renderer = breakablesT.GetComponent<SpriteRenderer>();
             renderer.sortingOrder = renderer.sortingOrder - (int)(breakablesT.position.y * 100);
         }
-    }
-
-    private void SetCheatStats()
-    {
-        player.stats = cheatStats;
     }
 
     private void AddDefaultPlayer(string playerName)
@@ -185,16 +183,12 @@ public class GameManager : MonoBehaviour
         );
         player = newPlayer;
         playerTransform.name = playerName;
-        //entities.Add(player);
+        gameIsActive = true;
     }
 
-    private void RandomEnemyAttack()
+    private void SetCheatStats()
     {
-        bool pinga = UnityEngine.Random.Range(0, 2) > 0;
-        foreach (var entity in enemiesRef.Values)
-        {
-            entity.PlayAnim(pinga ? "Attack" : "Die");
-        }
+        player.stats = cheatStats;
     }
 
     private void RestartScene()
@@ -262,7 +256,6 @@ public class GameManager : MonoBehaviour
 
     IEnumerator<WaitForSeconds> ReciclateEntity(Entity entity)
     {
-        DeleteEnemyRefs(entity.ID);
         yield return new WaitForSeconds(2.5f);
         entity.transform.position -= Vector3.right * 100; // Evitando bug de rotación en la animación de forma poco elegante
         entity.PlayAnim("Attack");
@@ -275,15 +268,12 @@ public class GameManager : MonoBehaviour
         entity.transform.gameObject.SetActive(false);
 
         entity.transform.gameObject.layer = LayerMask.NameToLayer("Enemy");
+        DeleteEnemy(entity.ID);
     }
 
-    public void RemoveEntity(Entity entity)
+    public void RemoveEnemy(Enemy entity)
     {
-        if (entity.GetType() == typeof(Enemy))
-        {
-            StartCoroutine(ReciclateEntity(entity));
-        }
-        else Debug.Log("¡Se muere el player!");
+        StartCoroutine(ReciclateEntity(entity));
     }
 
     public static string GetAnimationName(string clipName, WeaponType weaponType)
@@ -376,7 +366,6 @@ public class GameManager : MonoBehaviour
 #if UNITY_EDITOR
         if (Input.GetKeyDown(KeyCode.F1)) SetCheatStats();
         if (Input.GetButtonDown("Jump")) SpawnEnemyRandom();
-        if (Input.GetKeyDown(KeyCode.F3)) RandomEnemyAttack();
         if (Input.GetKeyDown(KeyCode.F12)) RestartScene();
 #endif
     }
@@ -389,6 +378,11 @@ public class GameManager : MonoBehaviour
     public static bool CheckYProximity(Vector2 hitPosition, Vector2 attackPosition, Vector2 attackDir)
     {
         return Mathf.Abs(hitPosition.y - (attackPosition.y + attackDir.y)) < 1f;
+    }
+
+    public void VibrationForce(long force)
+    {
+        Vibration.Vibrate(13 + force);
     }
 
     public void ResolveHits(Entity myself, RaycastHit2D[] raycastHit, Vector2 attackDir, LayerMask enemyMask)
@@ -456,6 +450,7 @@ public class GameManager : MonoBehaviour
                         {
                             GameManager.Instance.BreakBreakable(hit.transform, hitDir);
                             breakableCount++;
+                            VibrationForce(10);
                         }
 
                         else if (hitLayer == enemyMask)
@@ -465,6 +460,7 @@ public class GameManager : MonoBehaviour
                                 Entity enemy = GameManager.Instance.GetEnemyByName(hit.transform.name);
                                 if (enemy != null)
                                 {
+                                    VibrationForce(18);
                                     ShowHitEffect(hit.transform.position);
                                     myself.StrikeEntity(enemy, hitDir);
                                     enemyCount++;
