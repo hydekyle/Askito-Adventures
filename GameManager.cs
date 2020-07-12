@@ -13,6 +13,8 @@ public class GameManager : MonoBehaviour
 {
     public static GameManager Instance;
 
+    public ScriptableWeapons tableWeapons;
+
     public DialogManager dialogManager;
 
     //public Dictionary<int, Entity> enemiesRef = new Dictionary<int, Entity>();
@@ -86,7 +88,8 @@ public class GameManager : MonoBehaviour
             newEnemy.name = enemyName;
             enemies[x] = new Enemy(
                     newEnemy.transform,
-                    new Stats() { strength = 1, velocity = 1, life = 1 },
+                    basicStats,
+                    tableWeapons.weapons[UnityEngine.Random.Range(0, tableWeapons.weapons.Count)],
                     enemyName,
                     x
                 );
@@ -133,30 +136,33 @@ public class GameManager : MonoBehaviour
 
         if (enemy.status != Status.Alive)
         {
-            enemy.Spawn(finalPos);
+            enemy.Spawn(finalPos, basicStats);
         }
         else
         {
-            enemies.ToList().Find(e => e.status == Status.Dead)?.Spawn(finalPos);
+            enemies.ToList().Find(e => e.status == Status.Dead)?.Spawn(finalPos, basicStats);
         }
     }
 
-    private void GenerateMapEnemiesRefs()
-    {
-        foreach (Transform enemyT in mapEnemies)
-        {
-            int enemyID = GetNextEnemyID();
-            string enemyName = enemyT.name.Split(' ')[0] + " " + enemyID;
-            Enemy enemy = new Enemy(
-                enemyT,
-                new Stats() { life = 1, strength = 1, velocity = 1 },
-                enemyName,
-                enemyID
-            );
-            enemyT.name = enemyName;
-            enemy.SaveTransformReferences();
-        }
-    }
+    Stats basicStats = new Stats() { life = 5, strength = 1, velocity = 1 };
+
+    // private void GenerateMapEnemiesRefs()
+    // {
+    //     foreach (Transform enemyT in mapEnemies)
+    //     {
+    //         int enemyID = GetNextEnemyID();
+    //         string enemyName = enemyT.name.Split(' ')[0] + " " + enemyID;
+    //         Enemy enemy = new Enemy(
+    //             enemyT,
+    //             new Stats() { life = 1, strength = 1, velocity = 1 },
+    //             tableWeapons.weapons[UnityEngine.Random.Range(0, tableWeapons.weapons.Count)],
+    //             enemyName,
+    //             enemyID
+    //         );
+    //         enemyT.name = enemyName;
+    //         enemy.SaveTransformReferences();
+    //     }
+    // }
 
     public void DeleteEnemy(int enemyID)
     {
@@ -179,6 +185,7 @@ public class GameManager : MonoBehaviour
         Player newPlayer = new Player(
             playerTransform,
             new Stats() { life = 1, strength = 1, velocity = 2 },
+            tableWeapons.weapons[UnityEngine.Random.Range(0, tableWeapons.weapons.Count)],
             playerName
         );
         player = newPlayer;
@@ -345,6 +352,8 @@ public class GameManager : MonoBehaviour
         //GamePad.SetVibration(PlayerIndex.One, vForce, vForce);
     }
 
+    int wIndex = 0;
+
     private void Controls()
     {
         float xAxis = Input.GetAxis("Horizontal");
@@ -365,7 +374,13 @@ public class GameManager : MonoBehaviour
 
 
 #if UNITY_EDITOR
-        if (Input.GetKeyDown(KeyCode.F1)) SetCheatStats();
+        if (Input.GetKeyDown(KeyCode.F1))
+        {
+            if (wIndex + 1 < tableWeapons.weapons.Count) wIndex++;
+            else wIndex = 0;
+            EquipPlayerWeapon(tableWeapons.weapons[wIndex]);
+
+        }
         if (Input.GetButtonDown("Jump")) SpawnEnemyRandom();
         if (Input.GetKeyDown(KeyCode.F12)) RestartScene();
 #endif
@@ -374,6 +389,11 @@ public class GameManager : MonoBehaviour
     public void ButtonFromCanvas(string actionButton)
     {
         Input.PressButtonDownMobile(actionButton);
+    }
+
+    public void EquipPlayerWeapon(Weapon weapon)
+    {
+        player.EquipWeapon(weapon);
     }
 
     public static bool CheckYProximity(Vector2 hitPosition, Vector2 attackPosition, Vector2 attackDir)

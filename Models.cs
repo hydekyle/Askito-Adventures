@@ -8,6 +8,15 @@ public struct Stats
     public int velocity, strength, life;
 }
 
+[Serializable]
+public struct Weapon
+{
+    public Sprite sprite;
+    public string name;
+    public int damage, longitude;
+
+}
+
 public enum BodyLimb { Head, LegLeft, LegRight, ArmLeft, ArmRight }
 public enum Status { Alive, Dead }
 
@@ -18,6 +27,7 @@ public abstract class Entity
     public Status status = Status.Dead;
 
     public Character Dummy;
+    public Weapon weapon;
     public Transform transform;
     public Stats stats;
     public Animator AttackAnimator;
@@ -25,7 +35,6 @@ public abstract class Entity
     public LayerMask enemyMask;
     public Vector2 attackDirection = Vector2.right;
     public string name;
-    public int health = 9;
     public float lastTimeAttack = 0f;
     public float attackCD = 0.4f;
     public bool isActive = false;
@@ -38,11 +47,17 @@ public abstract class Entity
 
     public abstract void Die();
 
-    public void Spawn(Vector2 position)
+    public void EquipWeapon(Weapon newWeapon)
     {
-        this.health = 9;
-        this.status = Status.Alive;
+        weapon = newWeapon;
+        Dummy.SetWeaponSprite(newWeapon.sprite);
+    }
+
+    public void Spawn(Vector2 position, Stats newStats)
+    {
+        this.stats = newStats;
         this.transform.position = position;
+        this.status = Status.Alive;
         this.transform.gameObject.SetActive(true);
     }
 
@@ -65,9 +80,9 @@ public abstract class Entity
     {
         var raycastHit = Physics2D.CircleCastAll(
             transform.position + transform.right,
-            1f,
+            0.5f + 0.1f * weapon.longitude,
             attackDir,
-            0.25f
+            0.1f + 0.1f * weapon.longitude
         );
         GameManager.Instance.ResolveHits(
             this,
@@ -90,8 +105,10 @@ public abstract class Entity
 
     public void AttackDash()
     {
+        Vector2 direction = rigidbody.velocity;
+        if (Mathf.Abs(direction.x) > 0.0f) SetOrientation(direction.x);
         lastTimeAttack = lastTimeDash = Time.time;
-        ApplyImpulse(rigidbody.velocity.normalized * 1.3f);
+        ApplyImpulse(direction.normalized * 1.3f);
         Dummy.Animator.Play("AttackLunge1H");
         SlashAnim();
     }
@@ -200,7 +217,7 @@ public abstract class Entity
 
     public void StrikeEntity(Entity entity, Vector2 hitDir)
     {
-        entity.GetStrike(stats.strength * 10, hitDir);
+        entity.GetStrike(stats.strength + weapon.damage, hitDir);
     }
 
     public void SetAnimVelocity(int newVelocity)
@@ -309,7 +326,7 @@ public abstract class Entity
 [Serializable]
 public class Player : Entity
 {
-    public Player(Transform transform, Stats stats, string name)
+    public Player(Transform transform, Stats stats, Weapon weapon, string name)
     {
         this.transform = transform;
         this.stats = stats;
@@ -321,13 +338,13 @@ public class Player : Entity
         this.enemyMask = LayerMask.NameToLayer("Enemy");
         this.isActive = true;
         this.SaveTransformReferences();
+        this.EquipWeapon(weapon);
     }
 
     public override void Die()
     {
         Debug.Log("Legends never dies");
     }
-
 
     public override void Update()
     {
@@ -344,8 +361,8 @@ public class Player : Entity
     public override void GetStrike(int strikeForce, Vector2 hitDir)
     {
         rigidbody.AddForce(hitDir.normalized * strikeForce, ForceMode2D.Impulse);
-        health -= strikeForce;
-        if (health > 0)
+        stats.life -= strikeForce;
+        if (stats.life > 0)
         {
             Debug.Log("Me hacen pupa");
         }
@@ -359,7 +376,7 @@ public class Player : Entity
 [Serializable]
 public class Enemy : Entity
 {
-    public Enemy(Transform transform, Stats stats, string name, int ID)
+    public Enemy(Transform transform, Stats stats, Weapon weapon, string name, int ID)
     {
         this.transform = transform;
         this.stats = stats;
@@ -371,6 +388,7 @@ public class Enemy : Entity
         this.SetAnimVelocity(1);
         this.enemyMask = LayerMask.NameToLayer("Player");
         this.SaveTransformReferences();
+        this.EquipWeapon(weapon);
     }
 
     public override void Die()
@@ -388,8 +406,8 @@ public class Enemy : Entity
     public override void GetStrike(int strikeForce, Vector2 hitDir)
     {
         rigidbody.AddForce(hitDir.normalized * strikeForce, ForceMode2D.Impulse);
-        health -= strikeForce;
-        if (health > 0)
+        stats.life -= strikeForce;
+        if (stats.life > 0)
         {
             // No muero
         }
