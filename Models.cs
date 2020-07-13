@@ -1,6 +1,6 @@
 ﻿using System;
-using Assets.FantasyHeroes.Scripts;
 using UnityEngine;
+using Assets.FantasyHeroes.Scripts;
 
 [Serializable]
 public struct Stats
@@ -242,7 +242,7 @@ public abstract class Entity
         else SetAnimVelocity(1);
         if (clipName == "Attack") SlashAnim();
         Dummy.Animator.StopPlayback();
-        Dummy.Animator.Play(GameManager.GetAnimationName(clipName, Dummy.WeaponType));
+        Dummy.Animator.Play(AnimationManager.GetAnimationName(clipName, Dummy.WeaponType));
     }
 
     public void SlashAnim()
@@ -288,7 +288,7 @@ public abstract class Entity
     bool IsPlayerAttacking()
     {
         return Time.time < lastTimeAttack + attackTime;
-        //return Dummy.Animator.GetCurrentAnimatorStateInfo(0).IsName(GameManager.GetAnimationName("Attack", Dummy.WeaponType));
+        //return Dummy.Animator.GetCurrentAnimatorStateInfo(0).IsName(AnimationManager.GetAnimationName("Attack", Dummy.WeaponType));
     }
 
     public void Idle()

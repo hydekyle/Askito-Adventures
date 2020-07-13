@@ -54,6 +54,8 @@ public class GameManager : MonoBehaviour
 
     Transform[] enemiesT;
 
+    CullingManager cullingManager;
+
     private void Awake()
     {
         if (Instance != null) Destroy(Instance.gameObject);
@@ -67,6 +69,8 @@ public class GameManager : MonoBehaviour
         GeneratePools();
         SetMapSpriteOrders();
         AddDefaultPlayer("Player");
+        AllocateEnemies();
+        cullingManager = new CullingManager();
     }
 
     private void GeneratePools()
@@ -76,7 +80,10 @@ public class GameManager : MonoBehaviour
         bombEffectPool = EZObjectPool.CreateObjectPool(bombEffectPrefab, "BombEffect", 1, true, true, true);
         hitsPool = EZObjectPool.CreateObjectPool(hitPrefab, "HitEffect", 6, true, true, true);
         barrelsPool = EZObjectPool.CreateObjectPool(breakingBarrelPrefab, "Barrels", 3, true, true, true);
+    }
 
+    public void AllocateEnemies()
+    {
         enemiesT = new Transform[maxEnemies];
         enemies = new Enemy[maxEnemies];
 
@@ -89,7 +96,7 @@ public class GameManager : MonoBehaviour
             enemies[x] = new Enemy(
                     newEnemy.transform,
                     basicStats,
-                    tableWeapons.common[UnityEngine.Random.Range(0, tableWeapons.common.Count)],
+                    tableWeapons.common[UnityEngine.Random.Range(0, 4)],
                     enemyName,
                     x
                 );
@@ -116,13 +123,17 @@ public class GameManager : MonoBehaviour
         for (var x = 0; x < enemies.Length; x++)
         {
             Enemy enemy = enemies[x];
-            if (enemy.status == Status.Alive) enemy.Update();
+            if (enemy.status == Status.Alive)
+            {
+                enemy.Update();
+                //print(cullingManager.IsVisible(enemy.ID));
+            }
         }
     }
 
     private int GetNextEnemyID()
     {
-        return enemyCounter + 1 < enemies.Length ? enemyCounter : 0;
+        return enemyCounter + 1 < enemies.Length ? enemyCounter++ : 0;
     }
 
     public void SpawnEnemyRandom()
@@ -142,27 +153,10 @@ public class GameManager : MonoBehaviour
         {
             enemies.ToList().Find(e => e.status == Status.Dead)?.Spawn(finalPos, basicStats);
         }
+        cullingManager.SetSphere(enemy.ID, finalPos);
     }
 
     Stats basicStats = new Stats() { life = 5, strength = 1, velocity = 1 };
-
-    // private void GenerateMapEnemiesRefs()
-    // {
-    //     foreach (Transform enemyT in mapEnemies)
-    //     {
-    //         int enemyID = GetNextEnemyID();
-    //         string enemyName = enemyT.name.Split(' ')[0] + " " + enemyID;
-    //         Enemy enemy = new Enemy(
-    //             enemyT,
-    //             new Stats() { life = 1, strength = 1, velocity = 1 },
-    //             tableWeapons.weapons[UnityEngine.Random.Range(0, tableWeapons.weapons.Count)],
-    //             enemyName,
-    //             enemyID
-    //         );
-    //         enemyT.name = enemyName;
-    //         enemy.SaveTransformReferences();
-    //     }
-    // }
 
     public void DeleteEnemy(int enemyID)
     {
@@ -282,63 +276,6 @@ public class GameManager : MonoBehaviour
     public void RemoveEnemy(Enemy entity)
     {
         StartCoroutine(ReciclateEntity(entity));
-    }
-
-    public static string GetAnimationName(string clipName, WeaponType weaponType)
-    {
-        switch (clipName)
-        {
-            case "Alert":
-                switch (weaponType)
-                {
-                    case WeaponType.Melee1H:
-                    case WeaponType.MeleeTween:
-                    case WeaponType.Bow:
-                        return "Alert1H";
-                    case WeaponType.Melee2H:
-                        return "Alert2H";
-                    default:
-                        throw new NotImplementedException();
-                }
-            case "Attack":
-                switch (weaponType)
-                {
-                    case WeaponType.Melee1H:
-                        return "Attack1H";
-                    case WeaponType.Melee2H:
-                        return "Attack2H";
-                    case WeaponType.MeleeTween:
-                        return "AttackTween";
-                    case WeaponType.Bow:
-                        return "Shot";
-                    default:
-                        throw new NotImplementedException();
-                }
-            case "AttackLunge":
-                switch (weaponType)
-                {
-                    case WeaponType.Melee1H:
-                    case WeaponType.Melee2H:
-                    case WeaponType.MeleeTween:
-                    case WeaponType.Bow:
-                        return "AttackLunge1H";
-                    default:
-                        throw new NotImplementedException();
-                }
-            case "Cast":
-                switch (weaponType)
-                {
-                    case WeaponType.Melee1H:
-                    case WeaponType.Melee2H:
-                    case WeaponType.MeleeTween:
-                    case WeaponType.Bow:
-                        return "Cast1H";
-                    default:
-                        throw new NotImplementedException();
-                }
-            default:
-                return clipName;
-        }
     }
 
     public Entity GetEnemyByName(string enemyName)
@@ -517,6 +454,29 @@ public class GameManager : MonoBehaviour
             yield return new WaitForEndOfFrame();
         }
     }
+
+    private void OnDestroy()
+    {
+        cullingManager.Dispose();
+    }
+
+    // private void GenerateMapEnemiesRefs()
+    // {
+    //     foreach (Transform enemyT in mapEnemies)
+    //     {
+    //         int enemyID = GetNextEnemyID();
+    //         string enemyName = enemyT.name.Split(' ')[0] + " " + enemyID;
+    //         Enemy enemy = new Enemy(
+    //             enemyT,
+    //             new Stats() { life = 1, strength = 1, velocity = 1 },
+    //             tableWeapons.weapons[UnityEngine.Random.Range(0, tableWeapons.weapons.Count)],
+    //             enemyName,
+    //             enemyID
+    //         );
+    //         enemyT.name = enemyName;
+    //         enemy.SaveTransformReferences();
+    //     }
+    // }
 
 }
 
