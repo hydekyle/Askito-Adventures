@@ -89,7 +89,7 @@ public class GameManager : MonoBehaviour
             enemies[x] = new Enemy(
                     newEnemy.transform,
                     basicStats,
-                    tableWeapons.weapons[UnityEngine.Random.Range(0, tableWeapons.weapons.Count)],
+                    tableWeapons.common[UnityEngine.Random.Range(0, tableWeapons.common.Count)],
                     enemyName,
                     x
                 );
@@ -185,7 +185,7 @@ public class GameManager : MonoBehaviour
         Player newPlayer = new Player(
             playerTransform,
             new Stats() { life = 1, strength = 1, velocity = 2 },
-            tableWeapons.weapons[UnityEngine.Random.Range(0, tableWeapons.weapons.Count)],
+            tableWeapons.common[UnityEngine.Random.Range(0, tableWeapons.common.Count)],
             playerName
         );
         player = newPlayer;
@@ -376,9 +376,9 @@ public class GameManager : MonoBehaviour
 #if UNITY_EDITOR
         if (Input.GetKeyDown(KeyCode.F1))
         {
-            if (wIndex + 1 < tableWeapons.weapons.Count) wIndex++;
+            if (wIndex + 1 < tableWeapons.common.Count) wIndex++;
             else wIndex = 0;
-            EquipPlayerWeapon(tableWeapons.weapons[wIndex]);
+            EquipPlayerWeapon(tableWeapons.common[wIndex]);
 
         }
         if (Input.GetButtonDown("Jump")) SpawnEnemyRandom();

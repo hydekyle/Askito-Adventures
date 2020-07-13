@@ -11,9 +11,11 @@ public struct Stats
 [Serializable]
 public struct Weapon
 {
-    public Sprite sprite;
     public string name;
-    public int damage, longitude;
+    public Sprite sprite;
+    public WeaponType type;
+    public WeaponSpecial special;
+    public int damage, longitude, radius;
 
 }
 
@@ -50,6 +52,7 @@ public abstract class Entity
     public void EquipWeapon(Weapon newWeapon)
     {
         weapon = newWeapon;
+        this.Dummy.WeaponType = this.weapon.type;
         Dummy.SetWeaponSprite(newWeapon.sprite);
     }
 
@@ -80,7 +83,7 @@ public abstract class Entity
     {
         var raycastHit = Physics2D.CircleCastAll(
             transform.position + transform.right,
-            0.5f + 0.1f * weapon.longitude,
+            0.5f + 0.1f * weapon.radius,
             attackDir,
             0.1f + 0.1f * weapon.longitude
         );
