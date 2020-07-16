@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Networking;
+using System;
 
 public struct TweetData
 {
@@ -20,19 +21,22 @@ public struct TweetData
 public struct ServerResponse
 {
     public int statusCode;
-    public string data;
+    public string dataJSON;
 }
 
 public class Db : MonoBehaviour
 {
-    string server_adress = "localhost:8080";
+    string server_adress = "localhost:8080/hyde";
 
     private void Start()
     {
-        StartCoroutine(Conectar(server_adress));
+        StartCoroutine(GetTweetData(server_adress, tweetData =>
+        {
+            Debug.LogFormat("Lets gooo {0}", tweetData.accountName);
+        }));
     }
 
-    IEnumerator Conectar(string uri)
+    IEnumerator GetTweetData(string uri, Action<TweetData> tweetData)
     {
         using (UnityWebRequest request = UnityWebRequest.Get(uri))
         {
@@ -40,13 +44,10 @@ public class Db : MonoBehaviour
             if (!request.isNetworkError)
             {
                 ServerResponse response = JsonUtility.FromJson<ServerResponse>(request.downloadHandler.text);
-                if (response.statusCode == 0)
+                if (response.statusCode == 1)
                 {
-                    Debug.Log(response.data);
-                    TweetData myData = JsonUtility.FromJson<TweetData>(response.data);
-                    Debug.Log(myData.favourites);
+                    tweetData(JsonUtility.FromJson<TweetData>(response.dataJSON));
                 }
-
             }
             else
             {
