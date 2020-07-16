@@ -5,7 +5,7 @@ using UnityEngine;
 public class MainMenu : MonoBehaviour
 {
     public Material backgroundFarMaterial;
-    public Material backgroundMaterial;
+    //public Material backgroundMaterial;
     public Transform backgT;
 
     Camera mainCamera;
@@ -17,18 +17,17 @@ public class MainMenu : MonoBehaviour
 
     private void Update()
     {
-        MoveBackground(Time.time * 10);
+        MoveBackground(Time.time);
         backgT.position = new Vector3(
             backgT.position.x,
-            -mainCamera.transform.position.y / 7f,
+            -mainCamera.transform.position.y / 1.5f,
             backgT.position.z
         );
-        //backT.position = backT.position - Vector3.up * mainCamera.transform.position.y / 10;
     }
 
     private void MoveBackground(float value)
     {
-        backgroundMaterial.SetTextureOffset("_MainTex", new Vector2(value / 350f, 0));
-        backgroundFarMaterial.SetTextureOffset("_MainTex", new Vector2(value / 700f, 0));
+        backgroundFarMaterial.SetTextureOffset("_MainTex", new Vector2(value, 0));
+        //backgroundMaterial.SetTextureOffset("_MainTex", new Vector2(value / 2000f, 0));
     }
 }
