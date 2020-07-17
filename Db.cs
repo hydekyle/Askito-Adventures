@@ -24,19 +24,25 @@ public struct ServerResponse
     public string dataJSON;
 }
 
-public class Db : MonoBehaviour
+public class Db
 {
     string server_adress = "localhost:8080/hyde";
 
-    private void Start()
+    public Db()
     {
-        StartCoroutine(GetTweetData(server_adress, tweetData =>
+        GameManager.Instance.StartCoroutine(GetTweetData(server_adress, (tweetData, textureAvatar) =>
         {
-            Debug.LogFormat("Lets gooo {0}", tweetData.accountName);
+            Debug.LogFormat("Incoming User {0}", tweetData.accountName);
+            CanvasManager.Instance.avatarTweeter.sprite = Sprite.Create
+            (
+                textureAvatar,
+                 new Rect(0f, 0f, textureAvatar.width, textureAvatar.height),
+                 Vector2.zero
+            );
         }));
     }
 
-    IEnumerator GetTweetData(string uri, Action<TweetData> tweetData)
+    IEnumerator GetTweetData(string uri, Action<TweetData, Texture2D> tweetData)
     {
         using (UnityWebRequest request = UnityWebRequest.Get(uri))
         {
@@ -46,7 +52,15 @@ public class Db : MonoBehaviour
                 ServerResponse response = JsonUtility.FromJson<ServerResponse>(request.downloadHandler.text);
                 if (response.statusCode == 1)
                 {
-                    tweetData(JsonUtility.FromJson<TweetData>(response.dataJSON));
+                    TweetData data = JsonUtility.FromJson<TweetData>(response.dataJSON);
+
+                    Texture2D texture;
+                    using (UnityWebRequest textureRequest = UnityWebRequestTexture.GetTexture(data.pictureURL))
+                    {
+                        yield return textureRequest.SendWebRequest();
+                        texture = ((DownloadHandlerTexture)textureRequest.downloadHandler).texture;
+                    }
+                    tweetData(data, texture);
                 }
             }
             else

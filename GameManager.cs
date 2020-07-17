@@ -56,6 +56,8 @@ public class GameManager : MonoBehaviour
 
     CullingManager cullingManager;
 
+    Db db;
+
     private void Awake()
     {
         if (Instance != null) Destroy(Instance.gameObject);
@@ -66,6 +68,7 @@ public class GameManager : MonoBehaviour
     private void Initialize()
     {
         //admob = new AdmobManager();
+        db = new Db();
         GeneratePools();
         SetMapSpriteOrders();
         AddDefaultPlayer("Player");
@@ -115,11 +118,11 @@ public class GameManager : MonoBehaviour
     private void Update()
     {
         if (gameIsActive) Controls();
+        player.Update();
     }
 
     private void FixedUpdate()
     {
-        player.Update();
         for (var x = 0; x < enemies.Length; x++)
         {
             Enemy enemy = enemies[x];
