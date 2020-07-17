@@ -148,6 +148,7 @@ public class GameManager : MonoBehaviour
 
         if (enemy.status != Status.Alive)
         {
+            EquipManager.Instance.EquipShit(enemy.Dummy, GetRandomSkin());
             enemy.Spawn(finalPos, basicStats);
         }
         else
@@ -472,13 +473,15 @@ public class GameManager : MonoBehaviour
             if (wIndex + 1 < tableWeapons.common.Count) wIndex++;
             else wIndex = 0;
             EquipPlayerWeapon(tableWeapons.common[wIndex]);
-            List<Sprite> lista = EquipManager.Instance.skeleton;
-            EquipManager.Instance.EquipShit(enemies[0].Dummy, lista);
-
         }
         if (Input.GetButtonDown("Jump")) SpawnEnemyRandom();
         if (Input.GetKeyDown(KeyCode.F12)) RestartScene();
 #endif
+    }
+
+    List<Sprite> GetRandomSkin()
+    {
+        return EquipManager.Instance.dicSkins[EquipManager.Instance.skinNames[UnityEngine.Random.Range(0, EquipManager.Instance.skinNames.Count)]];
     }
 
 }
