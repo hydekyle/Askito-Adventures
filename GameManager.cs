@@ -143,19 +143,20 @@ public class GameManager : MonoBehaviour
         Enemy enemy = enemies[enemyID];
 
         Vector2 randomPos = new Vector2(UnityEngine.Random.Range(-6f, 6f), UnityEngine.Random.Range(-6f, 6f));
-
         Vector2 finalPos = (Vector2)player.transform.position + randomPos;
+
+        EquipManager.Instance.SetRandomEquipment(enemy.character);
+        cullingManager.SetSphere(enemy.ID, finalPos);
 
         if (enemy.status != Status.Alive)
         {
-            EquipManager.Instance.EquipShit(enemy.Dummy, GetRandomSkin());
             enemy.Spawn(finalPos, basicStats);
         }
         else
         {
             enemies.ToList().Find(e => e.status == Status.Dead)?.Spawn(finalPos, basicStats);
         }
-        cullingManager.SetSphere(enemy.ID, finalPos);
+
     }
 
     Stats basicStats = new Stats() { life = 5, strength = 1, velocity = 1 };
@@ -479,10 +480,7 @@ public class GameManager : MonoBehaviour
 #endif
     }
 
-    List<Sprite> GetRandomSkin()
-    {
-        return EquipManager.Instance.dicSkins[EquipManager.Instance.skinNames[UnityEngine.Random.Range(0, EquipManager.Instance.skinNames.Count)]];
-    }
+
 
 }
 

@@ -28,7 +28,7 @@ public abstract class Entity
     public int ID;
     public Status status = Status.Dead;
 
-    public Character Dummy;
+    public Character character;
     public Weapon weapon;
     public Transform transform;
     public Stats stats;
@@ -52,8 +52,8 @@ public abstract class Entity
     public void EquipWeapon(Weapon newWeapon)
     {
         weapon = newWeapon;
-        this.Dummy.WeaponType = this.weapon.type;
-        Dummy.SetWeaponSprite(newWeapon.sprite);
+        this.character.WeaponType = this.weapon.type;
+        character.SetWeaponSprite(newWeapon.sprite);
     }
 
     public void Spawn(Vector2 position, Stats newStats)
@@ -112,7 +112,7 @@ public abstract class Entity
         if (Mathf.Abs(direction.x) > 0.0f) SetOrientation(direction.x);
         lastTimeAttack = lastTimeDash = Time.time;
         ApplyImpulse(direction.normalized * 1.3f);
-        Dummy.Animator.Play("AttackLunge1H");
+        character.Animator.Play("AttackLunge1H");
         SlashAnim();
     }
 
@@ -225,13 +225,13 @@ public abstract class Entity
 
     public void SetAnimVelocity(int newVelocity)
     {
-        Dummy.Animator.speed = newVelocity;
+        character.Animator.speed = newVelocity;
         AttackAnimator.speed = newVelocity;
     }
 
     public void PlayAnim(string clipName)
     {
-        if (clipName == "Dash") Dummy.Animator.Play(clipName);
+        if (clipName == "Dash") character.Animator.Play(clipName);
         else if (Time.time < lastTimeDash + dashCD / 2)
         {
             if (clipName == "Attack") AttackDash();
@@ -241,8 +241,8 @@ public abstract class Entity
         if (clipName == "Walk") SetAnimVelocity(2);
         else SetAnimVelocity(1);
         if (clipName == "Attack") SlashAnim();
-        Dummy.Animator.StopPlayback();
-        Dummy.Animator.Play(AnimationManager.GetAnimationName(clipName, Dummy.WeaponType));
+        character.Animator.StopPlayback();
+        character.Animator.Play(AnimationManager.GetAnimationName(clipName, character.WeaponType));
     }
 
     public void SlashAnim()
@@ -334,7 +334,7 @@ public class Player : Entity
         this.transform = transform;
         this.stats = stats;
         this.name = name;
-        this.Dummy = transform.GetComponent<Character>();
+        this.character = transform.GetComponent<Character>();
         this.AttackAnimator = transform.Find("Attack_Effect").GetComponent<Animator>();
         this.rigidbody = transform.GetComponent<Rigidbody2D>();
         this.SetAnimVelocity(1);
@@ -385,7 +385,7 @@ public class Enemy : Entity
         this.stats = stats;
         this.name = name;
         this.ID = ID;
-        this.Dummy = transform.GetComponent<Character>();
+        this.character = transform.GetComponent<Character>();
         this.AttackAnimator = transform.Find("Attack_Effect").GetComponent<Animator>();
         this.rigidbody = transform.GetComponent<Rigidbody2D>();
         this.SetAnimVelocity(1);
