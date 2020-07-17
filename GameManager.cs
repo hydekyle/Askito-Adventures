@@ -1,13 +1,11 @@
 ﻿using System.Linq;
-using System.Collections;
 using System;
 using System.Collections.Generic;
 using UnityEngine;
-using Assets.FantasyHeroes.Scripts;
 using EZObjectPools;
-//using XInputDotNetPure;
 using UnityEngine.SceneManagement;
 using Doublsb.Dialog;
+//using XInputDotNetPure;
 
 public class GameManager : MonoBehaviour
 {
@@ -292,40 +290,6 @@ public class GameManager : MonoBehaviour
         //GamePad.SetVibration(PlayerIndex.One, vForce, vForce);
     }
 
-    int wIndex = 0;
-
-    private void Controls()
-    {
-        float xAxis = Input.GetAxis("Horizontal");
-        float yAxis = Input.GetAxis("Vertical");
-
-        if (Mathf.Abs(xAxis) > 0.0f || Mathf.Abs(yAxis) > 0.0f)
-        {
-            player.MoveToDirection(new Vector2(Input.GetAxis("Horizontal"), Input.GetAxis("Vertical")));
-        }
-        else player.Idle();
-
-        if (Input.GetButtonDown("Attack")) player.Attack(new Vector2(xAxis, yAxis));
-        else if (Input.GetButtonDown("Fire2")) player.Dash(new Vector2(xAxis, yAxis).normalized * 1.5f);
-        else if (Input.GetButtonDown("Jump")) SpawnEnemyRandom();
-        else if (Input.GetButtonDown("Fire3")) player.ThrowBomb();
-
-        if (Input.GetKeyDown(KeyCode.Escape)) SceneManager.LoadScene(0);
-
-
-#if UNITY_EDITOR
-        if (Input.GetKeyDown(KeyCode.F1))
-        {
-            if (wIndex + 1 < tableWeapons.common.Count) wIndex++;
-            else wIndex = 0;
-            EquipPlayerWeapon(tableWeapons.common[wIndex]);
-
-        }
-        if (Input.GetButtonDown("Jump")) SpawnEnemyRandom();
-        if (Input.GetKeyDown(KeyCode.F12)) RestartScene();
-#endif
-    }
-
     public void ButtonFromCanvas(string actionButton)
     {
         Input.PressButtonDownMobile(actionButton);
@@ -480,6 +444,42 @@ public class GameManager : MonoBehaviour
     //         enemy.SaveTransformReferences();
     //     }
     // }
+
+    int wIndex = 0;
+
+    private void Controls()
+    {
+        float xAxis = Input.GetAxis("Horizontal");
+        float yAxis = Input.GetAxis("Vertical");
+
+        if (Mathf.Abs(xAxis) > 0.0f || Mathf.Abs(yAxis) > 0.0f)
+        {
+            player.MoveToDirection(new Vector2(Input.GetAxis("Horizontal"), Input.GetAxis("Vertical")));
+        }
+        else player.Idle();
+
+        if (Input.GetButtonDown("Attack")) player.Attack(new Vector2(xAxis, yAxis));
+        else if (Input.GetButtonDown("Fire2")) player.Dash(new Vector2(xAxis, yAxis).normalized * 1.5f);
+        else if (Input.GetButtonDown("Jump")) SpawnEnemyRandom();
+        else if (Input.GetButtonDown("Fire3")) player.ThrowBomb();
+
+        if (Input.GetKeyDown(KeyCode.Escape)) SceneManager.LoadScene(0);
+
+
+#if UNITY_EDITOR
+        if (Input.GetKeyDown(KeyCode.F1))
+        {
+            if (wIndex + 1 < tableWeapons.common.Count) wIndex++;
+            else wIndex = 0;
+            EquipPlayerWeapon(tableWeapons.common[wIndex]);
+            List<Sprite> lista = EquipManager.Instance.skeleton;
+            EquipManager.Instance.EquipShit(enemies[0].Dummy, lista);
+
+        }
+        if (Input.GetButtonDown("Jump")) SpawnEnemyRandom();
+        if (Input.GetKeyDown(KeyCode.F12)) RestartScene();
+#endif
+    }
 
 }
 

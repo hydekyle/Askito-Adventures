@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b37d87f514975d34da4189c3eb5ec194, type: 3}
+  m_Name: BodyParts
+  m_EditorClassIdentifier: 
+  heads:
+  - {fileID: 21300000, guid: bf28c10f4558dd1438b4032aa3cf0484, type: 3}
+  - {fileID: 21300000, guid: cec76560c8433514ea3fe1daac8d8e35, type: 3}
+  - {fileID: 21300000, guid: 361ebb5ae6a7ae34f8ad2b23f3962272, type: 3}
+  torso_common:
+  - {fileID: 21300004, guid: 9783c86cae80a7041b6df66867525711, type: 3}
+  torso_epic: []
+  legs:
+  - {fileID: 21300004, guid: b4744b8f702b60f4eacbc3364f95733c, type: 3}
