@@ -115,8 +115,11 @@ public class GameManager : MonoBehaviour
 
     private void Update()
     {
-        if (gameIsActive) Controls();
-        player.Update();
+        if (gameIsActive)
+        {
+            Controls();
+            player.Update();
+        }
     }
 
     private void FixedUpdate()

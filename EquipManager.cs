@@ -7,22 +7,27 @@ public class EquipManager : MonoBehaviour
 {
     public static EquipManager Instance;
 
-    public List<string> skinNames = new List<string>();
-    public Dictionary<string, List<Sprite>> dicSkins = new Dictionary<string, List<Sprite>>();
-
-    private void Awake()
-    {
-        if (Instance != null) Destroy(this.gameObject);
-        Instance = this;
-    }
+    public List<string> skinNames;
+    public Dictionary<string, List<Sprite>> dicSkins;
 
     private void OnValidate()
     {
         ReadAllResources();
     }
 
+    private void Awake()
+    {
+        if (Instance != null) Destroy(this.gameObject);
+        Instance = this;
+#if !UNITY_EDITOR
+        ReadAllResources();
+#endif
+    }
+
     public void ReadAllResources()
     {
+        skinNames = new List<string>();
+        dicSkins = new Dictionary<string, List<Sprite>>();
         var assets = Resources.LoadAll("Skins", typeof(Texture2D));
 
         for (var x = 0; x < assets.Length; x++) skinNames.Add(assets[x].name); // Lee los conjuntos

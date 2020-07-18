@@ -11,16 +11,17 @@ public class CameraController : MonoBehaviour
     Transform playerT;
     public Material backgroundMaterial;
     public Material backgroundFarMaterial;
-    public float velocity = 1f;
-    public float backDistanceMax = 5f;
+    public float velocity = 1.3f;
+    public float backDistanceMax = 20f;
 
     public float maxPlayerDistanceLeft;
     //public float maxPlayerDistanceRight;
 
     Camera mainCamera;
     Vector3 target;
-    int cameraSize = 27;
+    float cameraSize = 4.44f;
     float minPosX;
+    public bool followActive = true;
 
     private void Awake()
     {
@@ -37,8 +38,8 @@ public class CameraController : MonoBehaviour
 
     private void Update()
     {
+        if (followActive) FollowTarget();
         UpdateCameraClampValue();
-        FollowTarget();
     }
 
     private void FollowTarget()
@@ -47,7 +48,7 @@ public class CameraController : MonoBehaviour
         transform.position = new Vector3(
             Mathf.Lerp(
                 transform.position.x,
-                Mathf.Clamp(target.x, minPosX - backDistanceMax, Mathf.Infinity),
+                Mathf.Clamp(target.x + 5, minPosX - backDistanceMax, Mathf.Infinity),
                 Time.deltaTime * velocity
                 ),
             transform.position.y,
@@ -74,15 +75,16 @@ public class CameraController : MonoBehaviour
         switch (zoomMode)
         {
             case ZoomOptions.Focus:
-                cameraSize = 18;
+                cameraSize = 3f;
                 break;
             case ZoomOptions.Far:
-                cameraSize = 30;
+                cameraSize = 5f;
                 break;
             default:
-                cameraSize = 27;
+                cameraSize = 4.44f;
                 break;
         }
+        mainCamera.orthographicSize = cameraSize;
     }
 
 }
