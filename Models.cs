@@ -99,19 +99,19 @@ public abstract class Entity
         );
     }
 
-    public bool comboChance = false;
+    public bool extraAction = false;
     int comboCounter;
     public void Attack(Vector2 attackDir)
     {
         if (IsAttackAvailable())
         {
-            comboChance = true;
+            extraAction = true;
             comboCounter = 0;
             lastTimeAttack = Time.time;
             SlashAttack(attackDir, 0.66f);
             PlayAnim("Attack");
         }
-        else if (IsComboAttackAvailable() && comboChance)
+        else if (IsComboAttackAvailable() && extraAction)
         {
             comboCounter++;
             lastTimeAttack = Time.time;
@@ -123,7 +123,7 @@ public abstract class Entity
         else
         {
             // Si vuelves a atacar sin haber golpeado (El Spam no mola)
-            comboChance = false;
+            extraAction = false;
         }
 
     }
@@ -308,7 +308,7 @@ public abstract class Entity
 
     bool IsDashAvailable()
     {
-        if (!IsAttackAvailable()) return false;
+        if (!IsAttackAvailable() && !IsComboAttackAvailable()) return false;
         return Time.time > lastTimeDash + dashCD;
     }
 
@@ -319,7 +319,7 @@ public abstract class Entity
 
     bool IsComboAttackAvailable()
     {
-        return Time.time < lastTimeAttackHit + 0.15f;
+        return Time.time < lastTimeAttackHit + attackCD / 2;
     }
 
     float attackTime = 0.5f;
