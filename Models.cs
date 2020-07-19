@@ -47,7 +47,7 @@ public abstract class Entity
     float lastTimeAttackCombo = 0f;
     float lastTimeAttackHit = 0f;
     float dashCD = 0.5f;
-    float attackCD = 0.55f;
+    float attackCD = 0.6f;
 
     public Transform headT, armLeftT, armRightT, legLeftT, legRightT;
 
@@ -100,22 +100,25 @@ public abstract class Entity
     }
 
     public bool comboChance = false;
+    int comboCounter;
     public void Attack(Vector2 attackDir)
     {
         if (IsAttackAvailable())
         {
             comboChance = true;
+            comboCounter = 0;
             lastTimeAttack = Time.time;
             SlashAttack(attackDir, 0.66f);
             PlayAnim("Attack");
         }
         else if (IsComboAttackAvailable() && comboChance)
         {
+            comboCounter++;
             lastTimeAttack = Time.time;
             lastTimeAttackCombo = Time.time;
             rigidbody.velocity = attackDir;
             SlashAttack(attackDir, 0.8f);
-            PlayAnim("AttackCombo");
+            PlayAnim(comboCounter % 2 == 0 ? "Attack" : "AttackCombo");
         }
         else
         {
@@ -316,7 +319,7 @@ public abstract class Entity
 
     bool IsComboAttackAvailable()
     {
-        return Time.time < lastTimeAttackHit + 0.12f;
+        return Time.time < lastTimeAttackHit + 0.15f;
     }
 
     float attackTime = 0.5f;

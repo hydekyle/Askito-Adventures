@@ -184,8 +184,8 @@ public class GameManager : MonoBehaviour
 
         Player newPlayer = new Player(
             playerTransform,
-            new Stats() { life = 1, strength = 1, velocity = 2 },
-            tableWeapons.common[0],
+            new Stats() { life = 5, strength = 1, velocity = 2 },
+            tableWeapons.common[4],
             playerName
         );
         player = newPlayer;
@@ -482,9 +482,6 @@ public class GameManager : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.F12)) RestartScene();
 #endif
     }
-
-
-
 }
 
 
