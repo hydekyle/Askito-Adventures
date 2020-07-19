@@ -21,6 +21,8 @@ public struct Weapon
 
 public enum BodyLimb { Head, LegLeft, LegRight, ArmLeft, ArmRight }
 public enum Status { Alive, Dead }
+public enum typeIA { Aggressive, Normal, Defensive }
+public enum actionIA { }
 
 [Serializable]
 public abstract class Entity
@@ -37,13 +39,15 @@ public abstract class Entity
     public LayerMask enemyMask;
     public Vector2 attackDirection = Vector2.right;
     public string name;
-    public float lastTimeAttack = 0f;
-    public float attackCD = 0.4f;
     public bool isActive = false;
     //public float padVibration = 0f;
 
-    float lastTimeDash;
+    float lastTimeDash = 0f;
+    float lastTimeAttack = 0f;
+    float lastTimeAttackCombo = 0f;
+    float lastTimeAttackHit = 0f;
     float dashCD = 0.5f;
+    float attackCD = 0.55f;
 
     public Transform headT, armLeftT, armRightT, legLeftT, legRightT;
 
@@ -95,25 +99,47 @@ public abstract class Entity
         );
     }
 
+    public bool comboChance = false;
     public void Attack(Vector2 attackDir)
     {
         if (IsAttackAvailable())
         {
+            comboChance = true;
             lastTimeAttack = Time.time;
-            attackDirection = attackDir == Vector2.zero ? (Vector2)transform.right : attackDir;
-            ApplyImpulse(attackDir / 2);
-            PlayAnim("Attack"); // La animación llamará a CastAttack
+            SlashAttack(attackDir, 0.66f);
+            PlayAnim("Attack");
         }
+        else if (IsComboAttackAvailable() && comboChance)
+        {
+            lastTimeAttack = Time.time;
+            lastTimeAttackCombo = Time.time;
+            rigidbody.velocity = attackDir;
+            SlashAttack(attackDir, 0.8f);
+            PlayAnim("AttackCombo");
+        }
+        else
+        {
+            // Si vuelves a atacar sin haber golpeado (El Spam no mola)
+            comboChance = false;
+        }
+
+    }
+
+    void SlashAttack(Vector2 attackDir, float impulseForce)
+    {
+        if (Mathf.Abs(attackDir.x) > 0.0f) SetOrientation(attackDir.x);
+        attackDirection = attackDir == Vector2.zero ? (Vector2)transform.right : attackDir;
+        ApplyImpulse(attackDir * impulseForce);
     }
 
     public void AttackDash()
     {
         Vector2 direction = rigidbody.velocity;
         if (Mathf.Abs(direction.x) > 0.0f) SetOrientation(direction.x);
-        lastTimeAttack = lastTimeDash = Time.time;
+        lastTimeAttack = Time.time;
         ApplyImpulse(direction.normalized * 1.3f);
         character.Animator.Play("AttackLunge1H");
-        SlashAnim();
+        SlashEffect();
     }
 
     public void Dash(Vector2 dashDir)
@@ -125,6 +151,25 @@ public abstract class Entity
             lastTimeDash = Time.time;
             ApplyImpulse(dashDir);
         }
+    }
+
+    public void PlayAnim(string clipName)
+    {
+        //if (clipName != "Alert" && clipName != "Walk") Debug.Log(clipName);
+
+        if (clipName == "Dash") character.Animator.Play(clipName);
+        else if (clipName == "Attack" && Time.time < lastTimeDash + dashCD)
+        {
+            AttackDash();
+            return;
+        }
+
+        if (clipName == "Walk") SetAnimVelocity(2);
+        else SetAnimVelocity(1);
+
+        if (clipName == "Attack" || clipName == "AttackCombo") SlashEffect();
+        character.Animator.StopPlayback();
+        character.Animator.Play(AnimationManager.GetAnimationName(clipName, character.WeaponType));
     }
 
     public void ApplyImpulse(Vector2 dashDir)
@@ -220,6 +265,7 @@ public abstract class Entity
 
     public void StrikeEntity(Entity entity, Vector2 hitDir)
     {
+        lastTimeAttackHit = Time.time;
         entity.GetStrike(stats.strength + weapon.damage, hitDir);
     }
 
@@ -229,23 +275,7 @@ public abstract class Entity
         AttackAnimator.speed = newVelocity;
     }
 
-    public void PlayAnim(string clipName)
-    {
-        if (clipName == "Dash") character.Animator.Play(clipName);
-        else if (Time.time < lastTimeDash + dashCD / 2)
-        {
-            if (clipName == "Attack") AttackDash();
-            return;
-        }
-
-        if (clipName == "Walk") SetAnimVelocity(2);
-        else SetAnimVelocity(1);
-        if (clipName == "Attack") SlashAnim();
-        character.Animator.StopPlayback();
-        character.Animator.Play(AnimationManager.GetAnimationName(clipName, character.WeaponType));
-    }
-
-    public void SlashAnim()
+    public void SlashEffect()
     {
         AttackAnimator.Play("Slash1", 0);
     }
@@ -282,6 +312,11 @@ public abstract class Entity
     bool IsAttackAvailable()
     {
         return Time.time > lastTimeAttack + attackCD;
+    }
+
+    bool IsComboAttackAvailable()
+    {
+        return Time.time < lastTimeAttackHit + 0.12f;
     }
 
     float attackTime = 0.5f;

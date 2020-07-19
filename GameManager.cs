@@ -69,7 +69,7 @@ public class GameManager : MonoBehaviour
         db = new Db();
         GeneratePools();
         SetMapSpriteOrders();
-        AddDefaultPlayer("Player");
+        SpawnPlayer("Player");
         AllocateEnemies();
         cullingManager = new CullingManager();
     }
@@ -162,7 +162,7 @@ public class GameManager : MonoBehaviour
 
     }
 
-    Stats basicStats = new Stats() { life = 5, strength = 1, velocity = 1 };
+    Stats basicStats = new Stats() { life = 30, strength = 1, velocity = 1 };
 
     public void DeleteEnemy(int enemyID)
     {
@@ -178,14 +178,14 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    private void AddDefaultPlayer(string playerName)
+    private void SpawnPlayer(string playerName)
     {
         playerTransform = Instantiate(playerGO, Vector3.zero, transform.rotation).transform;
 
         Player newPlayer = new Player(
             playerTransform,
             new Stats() { life = 1, strength = 1, velocity = 2 },
-            tableWeapons.common[UnityEngine.Random.Range(0, tableWeapons.common.Count)],
+            tableWeapons.common[0],
             playerName
         );
         player = newPlayer;

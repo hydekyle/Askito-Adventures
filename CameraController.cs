@@ -48,7 +48,7 @@ public class CameraController : MonoBehaviour
         transform.position = new Vector3(
             Mathf.Lerp(
                 transform.position.x,
-                Mathf.Clamp(target.x + 5, minPosX - backDistanceMax, Mathf.Infinity),
+                Mathf.Clamp(target.x + 1, minPosX - backDistanceMax, Mathf.Infinity),
                 Time.deltaTime * velocity
                 ),
             transform.position.y,
