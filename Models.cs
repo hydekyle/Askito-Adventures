@@ -66,6 +66,7 @@ public abstract class Entity
         this.transform.position = position;
         this.status = Status.Alive;
         this.transform.gameObject.SetActive(true);
+        this.character.isActive = true;
     }
 
     public abstract void GetStrike(int strikeForce, Vector2 hitDir);
@@ -380,6 +381,7 @@ public class Player : Entity
         this.isActive = true;
         this.SaveTransformReferences();
         this.EquipWeapon(weapon);
+        this.character.isActive = true;
     }
 
     public override void Die()

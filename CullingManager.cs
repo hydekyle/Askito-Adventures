@@ -34,6 +34,11 @@ public class CullingManager
         group.onStateChanged = StateChangedMethod;
     }
 
+    public void RemoveSphere(int enemyID)
+    {
+        SetSphere(enemyID, Vector3.up * 9999);
+    }
+
     public bool IsVisible(int ID)
     {
         return group.IsVisible(ID);
