@@ -462,18 +462,24 @@ public class GameManager : MonoBehaviour
         float xAxis = Input.GetAxis("Horizontal");
         float yAxis = Input.GetAxis("Vertical");
 
-        if (Mathf.Abs(xAxis) > 0.0f || Mathf.Abs(yAxis) > 0.0f)
+        if (player.isActive)
         {
-            player.MoveToDirection(new Vector2(Input.GetAxis("Horizontal"), Input.GetAxis("Vertical")));
+            if (Mathf.Abs(xAxis) > 0.0f || Mathf.Abs(yAxis) > 0.0f)
+            {
+                player.MoveToDirection(new Vector2(Input.GetAxis("Horizontal"), Input.GetAxis("Vertical")));
+            }
+            else player.Idle();
+
+            if (Input.GetButtonDown("Attack")) player.Attack(new Vector2(xAxis, yAxis));
+            else if (Input.GetButtonDown("Fire2")) player.Dash(new Vector2(xAxis, yAxis).normalized * 1.5f);
+            else if (Input.GetButtonDown("Fire3")) player.ShootWeapon();
         }
-        else player.Idle();
 
-        if (Input.GetButtonDown("Attack")) player.Attack(new Vector2(xAxis, yAxis));
-        else if (Input.GetButtonDown("Fire2")) player.Dash(new Vector2(xAxis, yAxis).normalized * 1.5f);
-        else if (Input.GetButtonDown("Jump")) SpawnEnemyRandom();
-        else if (Input.GetButtonDown("Fire3")) player.ThrowBomb();
-
-        if (Input.GetKeyDown(KeyCode.Escape)) SceneManager.LoadScene(0);
+        if (Input.GetButtonDown("Jump"))
+        {
+            if (player.isActive) SpawnEnemyRandom();
+            else SceneManager.LoadScene(0);
+        }
 
 #if UNITY_EDITOR
         if (Input.GetKeyDown(KeyCode.F1))

@@ -387,7 +387,9 @@ public class Player : Entity
 
     public override void Die()
     {
-        Debug.Log("Legends never dies");
+        transform.gameObject.layer = LayerMask.NameToLayer("Ghost");
+        this.isActive = false;
+        PlayAnim("Die");
     }
 
     public override void Update()
@@ -415,7 +417,7 @@ public class Player : Entity
         }
         else
         {
-            Debug.Log("Legends never die");
+            Burst(hitDir);
         }
     }
 }
@@ -452,6 +454,8 @@ public class Enemy : Entity
 
     public override void GetStrike(int strikeForce, Vector2 hitDir)
     {
+        EnemiesManager.Instance.StopEnemyRoutine(this.ID);
+        PlayAnim("Hit");
         rigidbody.AddForce(hitDir.normalized * strikeForce, ForceMode2D.Impulse);
         stats.life -= strikeForce;
         if (stats.life > 0)
@@ -463,4 +467,5 @@ public class Enemy : Entity
             Burst(hitDir);
         }
     }
+
 }

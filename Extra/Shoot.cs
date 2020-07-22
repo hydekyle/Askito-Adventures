@@ -35,7 +35,7 @@ public class Shoot : MonoBehaviour
             Entity hitEnemy = GameManager.Instance.GetEnemyByName(other.transform.name);
             if (hitEnemy != null)
             {
-                hitEnemy.Burst(hitDir);
+                hitEnemy.GetStrike(2, hitDir);
             }
         }
         else if (hitLayer == LayerMask.NameToLayer("Breakable"))
