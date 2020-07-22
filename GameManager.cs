@@ -56,6 +56,8 @@ public class GameManager : MonoBehaviour
 
     Db db;
 
+    Stats basicEnemyStats = new Stats() { life = 9, strength = 1, velocity = 1 };
+
     private void Awake()
     {
         if (Instance != null) Destroy(Instance.gameObject);
@@ -71,7 +73,8 @@ public class GameManager : MonoBehaviour
         SetMapSpriteOrders();
         SpawnPlayer("Player");
         AllocateEnemies();
-        cullingManager = new CullingManager();
+        //cullingManager = new CullingManager();
+        //StartCoroutine(RutinaEnemigos());
     }
 
     private void GeneratePools()
@@ -96,7 +99,7 @@ public class GameManager : MonoBehaviour
             newEnemy.name = enemyName;
             enemies[x] = new Enemy(
                 newEnemy.transform,
-                basicStats,
+                basicEnemyStats,
                 tableWeapons.common[UnityEngine.Random.Range(0, 4)],
                 enemyName,
                 x
@@ -122,15 +125,17 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    private void FixedUpdate()
+    IEnumerator<WaitForFixedUpdate> RutinaEnemigos()
     {
-        for (var x = 0; x < enemies.Length; x++)
+        while (gameIsActive)
         {
-            Enemy enemy = enemies[x];
-            if (enemy.status == Status.Alive)
+            for (var x = 0; x < enemies.Length; x++)
             {
-                enemy.Update();
-                //print(cullingManager.IsVisible(enemy.ID));
+                if (enemies[x].status == Status.Alive)
+                {
+                    enemies[x].Update();
+                }
+                yield return new WaitForFixedUpdate();
             }
         }
     }
@@ -148,27 +153,24 @@ public class GameManager : MonoBehaviour
         Vector2 randomPos = new Vector2(UnityEngine.Random.Range(-6f, 6f), UnityEngine.Random.Range(-6f, 6f));
         Vector2 finalPos = (Vector2)player.transform.position + randomPos;
 
+        if (enemy.status == Status.Alive)
+        {
+            enemy = enemies.ToList().Find(e => e.status == Status.Dead);
+            if (enemy == null) return;
+        }
+
+        Stats randomStats = basicEnemyStats;
+        randomStats.velocity = UnityEngine.Random.Range(1, 3);
+        enemy.Spawn(finalPos, randomStats);
         EquipManager.Instance.SetRandomEquipment(enemy.character);
-        cullingManager.SetSphere(enemy.ID, finalPos);
-
-        if (enemy.status != Status.Alive)
-        {
-            enemy.Spawn(finalPos, basicStats);
-        }
-        else
-        {
-            enemies.ToList().Find(e => e.status == Status.Dead)?.Spawn(finalPos, basicStats);
-        }
-
+        cullingManager?.SetSphere(enemy.ID, finalPos);
     }
-
-    Stats basicStats = new Stats() { life = 9, strength = 1, velocity = 1 };
 
     public void DeleteEnemy(int enemyID)
     {
-        cullingManager.RemoveSphere(enemyID);
+        cullingManager?.RemoveSphere(enemyID);
         enemies[enemyID].character.isActive = false;
-        enemies[enemyID].status = Status.Dead;
+        //enemies[enemyID].status = Status.Dead;
     }
 
     private void SetMapSpriteOrders()
@@ -281,9 +283,10 @@ public class GameManager : MonoBehaviour
         DeleteEnemy(entity.ID);
     }
 
-    public void RemoveEnemy(Enemy entity)
+    public void RemoveEnemy(Enemy enemy)
     {
-        StartCoroutine(ReciclateEntity(entity));
+        enemy.status = Status.Dead;
+        StartCoroutine(ReciclateEntity(enemy));
     }
 
     public Entity GetEnemyByName(string enemyName)
@@ -431,7 +434,7 @@ public class GameManager : MonoBehaviour
 
     private void OnDestroy()
     {
-        cullingManager.Dispose();
+        cullingManager?.Dispose();
     }
 
     // private void GenerateMapEnemiesRefs()
@@ -479,7 +482,7 @@ public class GameManager : MonoBehaviour
             else wIndex = 0;
             EquipPlayerWeapon(tableWeapons.common[wIndex]);
         }
-        if (Input.GetButtonDown("Jump")) SpawnEnemyRandom();
+        //if (Input.GetButtonDown("Jump")) SpawnEnemyRandom();
         if (Input.GetKeyDown(KeyCode.F12)) RestartScene();
 #endif
     }

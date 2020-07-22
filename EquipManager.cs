@@ -43,6 +43,7 @@ public class EquipManager : MonoBehaviour
 
     public void SetRandomEquipment(Character character)
     {
+
         List<Sprite> spriteList = GetRandomSkin();
         float colorValue = Random.Range(100f, 255f);
         Color skinColor = new Color(colorValue, colorValue, colorValue, 255f);

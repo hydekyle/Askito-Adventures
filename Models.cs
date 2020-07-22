@@ -42,7 +42,7 @@ public abstract class Entity
     public bool isActive = false;
     //public float padVibration = 0f;
 
-    float lastTimeDash = 0f;
+    public float lastTimeDash = 0f;
     float lastTimeAttack = 0f;
     float lastTimeAttackCombo = 0f;
     float lastTimeAttackHit = 0f;
@@ -67,6 +67,7 @@ public abstract class Entity
         this.status = Status.Alive;
         this.transform.gameObject.SetActive(true);
         this.character.isActive = true;
+        this.ClampMyself(true, true);
     }
 
     public abstract void GetStrike(int strikeForce, Vector2 hitDir);
@@ -401,10 +402,13 @@ public class Player : Entity
     //     GameManager.Instance.PadVibration(padVibration);
     // }
 
+    float inmuneTimeAfterDash = 0.2f;
+
     public override void GetStrike(int strikeForce, Vector2 hitDir)
     {
         rigidbody.AddForce(hitDir.normalized * strikeForce, ForceMode2D.Impulse);
         stats.life -= strikeForce;
+        if (lastTimeDash + inmuneTimeAfterDash > Time.time) return;
         if (stats.life > 0)
         {
             Debug.Log("Me hacen pupa");
@@ -443,7 +447,7 @@ public class Enemy : Entity
 
     public override void Update()
     {
-        ClampMyself(false, true);
+        //ClampMyself(false, true);
     }
 
     public override void GetStrike(int strikeForce, Vector2 hitDir)
