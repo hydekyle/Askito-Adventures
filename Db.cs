@@ -49,7 +49,16 @@ public class Db
             yield return request.SendWebRequest();
             if (!request.isNetworkError)
             {
-                ServerResponse response = JsonUtility.FromJson<ServerResponse>(request.downloadHandler.text);
+                ServerResponse response;
+                try
+                {
+                    response = JsonUtility.FromJson<ServerResponse>(request.downloadHandler.text);
+                }
+                catch
+                {
+                    Debug.LogWarning("JSON response very feo");
+                    yield break;
+                }
                 if (response.statusCode == 1)
                 {
                     TweetData data = JsonUtility.FromJson<TweetData>(response.dataJSON);

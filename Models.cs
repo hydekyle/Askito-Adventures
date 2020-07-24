@@ -105,7 +105,7 @@ public abstract class Entity
     int comboCounter;
     public void Attack(Vector2 attackDir)
     {
-        if (IsAttackAvailable())
+        if (IsAttackAvailable() && !IsPlayerCounterAttacking())
         {
             extraAction = true;
             comboCounter = 0;
@@ -150,11 +150,22 @@ public abstract class Entity
     public void Dash(Vector2 dashDir)
     {
         if (dashDir == Vector2.zero) return;
-        if (IsDashAvailable())
+        if (IsDashAvailable() && !IsPlayerCounterAttacking())
         {
             PlayAnim("Dash");
             lastTimeDash = Time.time;
             ApplyImpulse(dashDir);
+        }
+    }
+
+    float lastTimeCounterAttack = 0f;
+
+    public void CounterAttack()
+    {
+        if (!IsPlayerCounterAttacking())
+        {
+            lastTimeCounterAttack = Time.time;
+            PlayAnim("Cast1H");
         }
     }
 
@@ -287,7 +298,7 @@ public abstract class Entity
 
     public void MoveToDirection(Vector2 direction)
     {
-        rigidbody.velocity = Vector2.Lerp(rigidbody.velocity, direction, Time.deltaTime * stats.velocity);
+        if (!IsPlayerCounterAttacking() && !IsDashAvailable()) rigidbody.velocity = Vector2.Lerp(rigidbody.velocity, direction, Time.deltaTime * stats.velocity);
 
         if (IsMoveAvailable())
         {
@@ -304,7 +315,7 @@ public abstract class Entity
 
     bool IsMoveAvailable()
     {
-        if (!IsDashAvailable()) return false;
+        if (!IsDashAvailable() || IsPlayerCounterAttacking()) return false;
         return Time.time > lastTimeAttack + attackCD * 0.99f;
     }
 
@@ -331,12 +342,17 @@ public abstract class Entity
         //return Dummy.Animator.GetCurrentAnimatorStateInfo(0).IsName(AnimationManager.GetAnimationName("Attack", Dummy.WeaponType));
     }
 
+    private bool IsPlayerCounterAttacking()
+    {
+        return Time.time < lastTimeCounterAttack + 0.6f;
+    }
+
     public void Idle()
     {
-        if (IsAttackAvailable() && !IsPlayerAttacking())
+        if (IsAttackAvailable() && !IsPlayerAttacking() && IsDashAvailable())
         {
             if (IsDashAvailable()) rigidbody.velocity = Vector2.zero;
-            PlayAnim("Alert");
+            if (!IsPlayerCounterAttacking()) PlayAnim("Alert");
         }
     }
 

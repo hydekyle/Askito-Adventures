@@ -58,6 +58,7 @@ public class EnemiesManager : MonoBehaviour
             yield return new WaitForFixedUpdate();
         }
         while (distanceToPlayer > 1.5f && enemy.status == Status.Alive);
+        enemy.Idle();
         yield return new WaitForSeconds(UnityEngine.Random.Range(0.1f, 0.7f));
         if (player.isActive)
         {

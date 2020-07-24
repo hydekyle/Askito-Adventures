@@ -65,6 +65,19 @@ public class GameManager : MonoBehaviour
         Initialize();
     }
 
+    private void Start()
+    {
+        LagSpikesResolver();
+    }
+
+    private void LagSpikesResolver()
+    {
+        Vector2 origin = Vector2.up * 100;
+        ShowHitEffect(origin);
+        ShootWeapon(origin, Vector2.right);
+        ShootBomb(origin);
+    }
+
     private void Initialize()
     {
         //admob = new AdmobManager();
@@ -188,7 +201,7 @@ public class GameManager : MonoBehaviour
 
         Player newPlayer = new Player(
             playerTransform,
-            new Stats() { life = 5, strength = 1, velocity = 2 },
+            new Stats() { life = 1, strength = 1, velocity = 2 },
             tableWeapons.common[0],
             playerName
         );
@@ -220,6 +233,14 @@ public class GameManager : MonoBehaviour
     public void ShootBomb(Transform shooter)
     {
         if (bombsPool.TryGetNextObject(shooter.position, shooter.rotation, out GameObject bomb))
+        {
+            bomb.SetActive(true);
+        }
+    }
+
+    public void ShootBomb(Vector2 position)
+    {
+        if (bombsPool.TryGetNextObject(position, transform.rotation, out GameObject bomb))
         {
             bomb.SetActive(true);
         }
@@ -471,7 +492,18 @@ public class GameManager : MonoBehaviour
             else player.Idle();
 
             if (Input.GetButtonDown("Attack")) player.Attack(new Vector2(xAxis, yAxis));
-            else if (Input.GetButtonDown("Fire2")) player.Dash(new Vector2(xAxis, yAxis).normalized * 1.5f);
+            else if (Input.GetButtonDown("Fire2"))
+            {
+                if (new Vector2(xAxis, yAxis).normalized == Vector2.zero)
+                {
+                    player.CounterAttack();
+                }
+                else
+                {
+                    player.Dash(new Vector2(xAxis, yAxis).normalized * 1.5f);
+                }
+
+            }
             else if (Input.GetButtonDown("Fire3")) player.ShootWeapon();
         }
 
