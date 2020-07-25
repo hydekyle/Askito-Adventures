@@ -105,7 +105,7 @@ public abstract class Entity
     int comboCounter;
     public void Attack(Vector2 attackDir)
     {
-        if (IsAttackAvailable() && !IsPlayerCounterAttacking())
+        if (IsAttackAvailable() && !IsCounterAttacking())
         {
             extraAction = true;
             comboCounter = 0;
@@ -130,6 +130,17 @@ public abstract class Entity
 
     }
 
+    public void CounterAttack(Vector2 attackDir)
+    {
+        Debug.Log("Counter");
+        lastTimeAttack = Time.time;
+        rigidbody.AddForce(attackDir);
+        SetOrientation(attackDir.x);
+        lastTimeDash = Time.time;
+        CastAttack(attackDir);
+        character.Animator.Play("AttackCounter");
+    }
+
     void SlashAttack(Vector2 attackDir, float impulseForce)
     {
         if (Mathf.Abs(attackDir.x) > 0.0f) SetOrientation(attackDir.x);
@@ -150,7 +161,7 @@ public abstract class Entity
     public void Dash(Vector2 dashDir)
     {
         if (dashDir == Vector2.zero) return;
-        if (IsDashAvailable() && !IsPlayerCounterAttacking())
+        if (IsDashAvailable() && !IsCounterAttacking())
         {
             PlayAnim("Dash");
             lastTimeDash = Time.time;
@@ -162,7 +173,7 @@ public abstract class Entity
 
     public void CounterAttack()
     {
-        if (!IsPlayerCounterAttacking())
+        if (!IsCounterAttacking())
         {
             lastTimeCounterAttack = Time.time;
             PlayAnim("Cast1H");
@@ -298,7 +309,7 @@ public abstract class Entity
 
     public void MoveToDirection(Vector2 direction)
     {
-        if (!IsPlayerCounterAttacking() && !IsDashAvailable()) rigidbody.velocity = Vector2.Lerp(rigidbody.velocity, direction, Time.deltaTime * stats.velocity);
+        if (!IsCounterAttacking() && !IsDashAvailable()) rigidbody.velocity = Vector2.Lerp(rigidbody.velocity, direction, Time.deltaTime * stats.velocity);
 
         if (IsMoveAvailable())
         {
@@ -315,7 +326,7 @@ public abstract class Entity
 
     bool IsMoveAvailable()
     {
-        if (!IsDashAvailable() || IsPlayerCounterAttacking()) return false;
+        if (!IsDashAvailable() || IsCounterAttacking()) return false;
         return Time.time > lastTimeAttack + attackCD * 0.99f;
     }
 
@@ -342,9 +353,9 @@ public abstract class Entity
         //return Dummy.Animator.GetCurrentAnimatorStateInfo(0).IsName(AnimationManager.GetAnimationName("Attack", Dummy.WeaponType));
     }
 
-    private bool IsPlayerCounterAttacking()
+    public bool IsCounterAttacking()
     {
-        return Time.time < lastTimeCounterAttack + 0.6f;
+        return Time.time < lastTimeCounterAttack + 0.5f;
     }
 
     public void Idle()
@@ -352,7 +363,7 @@ public abstract class Entity
         if (IsAttackAvailable() && !IsPlayerAttacking() && IsDashAvailable())
         {
             if (IsDashAvailable()) rigidbody.velocity = Vector2.zero;
-            if (!IsPlayerCounterAttacking()) PlayAnim("Alert");
+            if (!IsCounterAttacking()) PlayAnim("Alert");
         }
     }
 
@@ -364,7 +375,7 @@ public abstract class Entity
         );
     }
 
-    private void SetOrientation(float directionX)
+    public void SetOrientation(float directionX)
     {
         bool facingRight = directionX > 0 ? true : false;
         transform.rotation = Quaternion.AngleAxis(facingRight ? 0 : -180, Vector3.up);
@@ -410,23 +421,24 @@ public class Player : Entity
 
     public override void Update()
     {
-        //WorkVibration();
         if (isActive) ClampMyself(true, true);
     }
-
-    // private void WorkVibration()
-    // {
-    //     padVibration = Mathf.Lerp(padVibration, 0.0f, Time.deltaTime * 15);
-    //     GameManager.Instance.PadVibration(padVibration);
-    // }
 
     float inmuneTimeAfterDash = 0.2f;
 
     public override void GetStrike(int strikeForce, Vector2 hitDir)
     {
+
+        if (IsCounterAttacking())
+        {
+            CounterAttack(-hitDir.normalized);
+            return;
+        }
+
+        if (lastTimeDash + inmuneTimeAfterDash > Time.time) return;
+
         rigidbody.AddForce(hitDir.normalized * strikeForce, ForceMode2D.Impulse);
         stats.life -= strikeForce;
-        if (lastTimeDash + inmuneTimeAfterDash > Time.time) return;
         if (stats.life > 0)
         {
             Debug.Log("Me hacen pupa");

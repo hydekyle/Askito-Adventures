@@ -81,7 +81,7 @@ public class GameManager : MonoBehaviour
     private void Initialize()
     {
         //admob = new AdmobManager();
-        db = new Db();
+        //db = new Db();
         GeneratePools();
         SetMapSpriteOrders();
         SpawnPlayer("Player");
@@ -457,24 +457,6 @@ public class GameManager : MonoBehaviour
     {
         cullingManager?.Dispose();
     }
-
-    // private void GenerateMapEnemiesRefs()
-    // {
-    //     foreach (Transform enemyT in mapEnemies)
-    //     {
-    //         int enemyID = GetNextEnemyID();
-    //         string enemyName = enemyT.name.Split(' ')[0] + " " + enemyID;
-    //         Enemy enemy = new Enemy(
-    //             enemyT,
-    //             new Stats() { life = 1, strength = 1, velocity = 1 },
-    //             tableWeapons.weapons[UnityEngine.Random.Range(0, tableWeapons.weapons.Count)],
-    //             enemyName,
-    //             enemyID
-    //         );
-    //         enemyT.name = enemyName;
-    //         enemy.SaveTransformReferences();
-    //     }
-    // }
 
     int wIndex = 0;
 
