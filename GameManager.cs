@@ -1,5 +1,7 @@
-﻿using System;
+﻿using System.Runtime.CompilerServices;
+using System;
 using System.Collections.Generic;
+using System.Collections;
 using System.Linq;
 using Doublsb.Dialog;
 using EZObjectPools;
@@ -50,13 +52,15 @@ public class GameManager : MonoBehaviour
     public int maxEnemies = 10;
     int enemyCounter = 0;
 
+    public float minY = -2f, maxY = 0.5f;
+
     Transform[] enemiesT;
 
     CullingManager cullingManager;
 
     Db db;
 
-    Stats basicEnemyStats = new Stats() { life = 9, strength = 1, velocity = 1 };
+    Stats basicEnemyStats = new Stats() { life = 6, strength = 1, velocity = 1 };
 
     private void Awake()
     {
@@ -68,6 +72,44 @@ public class GameManager : MonoBehaviour
     private void Start()
     {
         LagSpikesResolver();
+    }
+
+    int enemySpawnAmount = 2;
+    int enemiesKilledThisRound = 0;
+    int totalBattles = 1;
+
+    bool battleIsActive = false;
+
+    public void BattleStart()
+    {
+        battleIsActive = true;
+        totalBattles++;
+        enemySpawnAmount = Mathf.Clamp(totalBattles, 1, maxEnemies);
+        enemiesKilledThisRound = 0;
+        CameraController.Instance.SetBattleMode(!CameraController.Instance.battleMode);
+        Camera mainCamera = Camera.main;
+        StartCoroutine(MrSpawner(enemySpawnAmount, () =>
+        {
+            EnemiesManager.Instance.SendAllEnemiesToAttack();
+        }));
+    }
+
+    public float timeLastBattleEnd = -1f;
+    public void BattleEnd()
+    {
+        timeLastBattleEnd = Time.time;
+        battleIsActive = false;
+        CameraController.Instance.SetBattleMode(false);
+    }
+
+    public IEnumerator MrSpawner(int amount, Action onEnded)
+    {
+        for (var x = 0; x < enemySpawnAmount; x++)
+        {
+            SpawnEnemyRandom();
+            yield return new WaitForEndOfFrame();
+        }
+        onEnded.Invoke();
     }
 
     private void LagSpikesResolver()
@@ -135,23 +177,24 @@ public class GameManager : MonoBehaviour
         {
             Controls();
             player.Update();
+            if (player.transform.position.x > totalBattles * 15 && !battleIsActive && Time.time > timeLastBattleEnd + 3f) BattleStart();
         }
     }
 
-    IEnumerator<WaitForFixedUpdate> RutinaEnemigos()
-    {
-        while (gameIsActive)
-        {
-            for (var x = 0; x < enemies.Length; x++)
-            {
-                if (enemies[x].status == Status.Alive)
-                {
-                    enemies[x].Update();
-                }
-                yield return new WaitForFixedUpdate();
-            }
-        }
-    }
+    // IEnumerator<WaitForFixedUpdate> RutinaEnemigos()
+    // {
+    //     while (gameIsActive)
+    //     {
+    //         for (var x = 0; x < enemies.Length; x++)
+    //         {
+    //             if (enemies[x].status == Status.Alive)
+    //             {
+    //                 enemies[x].Update();
+    //             }
+    //             yield return new WaitForFixedUpdate();
+    //         }
+    //     }
+    // }
 
     private int GetNextEnemyID()
     {
@@ -160,16 +203,27 @@ public class GameManager : MonoBehaviour
 
     public void SpawnEnemyRandom()
     {
+        bool spawnOnLeft = UnityEngine.Random.Range(0, 4) % 2 == 0 ? true : false;
+        var mainCamera = Camera.main;
+        var finalPos = new Vector3(
+                spawnOnLeft ?
+                CameraController.Instance.maxDistanceLeft - 1 - UnityEngine.Random.Range(0f, 1f) :
+                CameraController.Instance.maxDistanceRight + 1 + UnityEngine.Random.Range(0f, 1f),
+                UnityEngine.Random.Range(minY, maxY),
+                0
+        );
+
         int enemyID = GetNextEnemyID();
         Enemy enemy = enemies[enemyID];
-
-        Vector2 randomPos = new Vector2(UnityEngine.Random.Range(-6f, 6f), UnityEngine.Random.Range(-6f, 6f));
-        Vector2 finalPos = (Vector2)player.transform.position + randomPos;
 
         if (enemy.status == Status.Alive)
         {
             enemy = enemies.ToList().Find(e => e.status == Status.Dead);
-            if (enemy == null) return;
+            if (enemy == null)
+            {
+                Debug.LogWarning("Esto no puede ser");
+                return;
+            }
         }
 
         Stats randomStats = basicEnemyStats;
@@ -308,6 +362,8 @@ public class GameManager : MonoBehaviour
     {
         enemy.status = Status.Dead;
         StartCoroutine(ReciclateEntity(enemy));
+        enemiesKilledThisRound++;
+        if (enemiesKilledThisRound == enemySpawnAmount) BattleEnd();
     }
 
     public Entity GetEnemyByName(string enemyName)
@@ -363,7 +419,7 @@ public class GameManager : MonoBehaviour
                 var hitMask = hit.transform.gameObject.layer;
                 if (hitMask == LayerMask.NameToLayer("Enemy"))
                 {
-                    GetEnemyByName(hit.transform.gameObject.name)?.Burst(hitDir);
+                    GetEnemyByName(hit.transform.gameObject.name)?.GetStrike(10, hitDir);
                 }
                 else if (hitMask == LayerMask.NameToLayer("Breakable"))
                 {
@@ -491,7 +547,7 @@ public class GameManager : MonoBehaviour
 
         if (Input.GetButtonDown("Jump"))
         {
-            if (player.isActive) SpawnEnemyRandom();
+            if (player.isActive) ShootBomb(player.transform);
             else SceneManager.LoadScene(0);
         }
 

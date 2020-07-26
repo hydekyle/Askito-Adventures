@@ -21,8 +21,8 @@ public struct Weapon
 
 public enum BodyLimb { Head, LegLeft, LegRight, ArmLeft, ArmRight }
 public enum Status { Alive, Dead }
-public enum typeIA { Aggressive, Normal, Defensive }
-public enum actionIA { }
+public enum behaviorIA { Aggressive, Normal, Defensive }
+public enum typeIA { Normal, Dodger, Caster }
 
 [Serializable]
 public abstract class Entity
@@ -65,9 +65,9 @@ public abstract class Entity
         this.stats = newStats;
         this.transform.position = position;
         this.status = Status.Alive;
-        this.transform.gameObject.SetActive(true);
         this.character.isActive = true;
-        this.ClampMyself(true, true);
+        this.ClampMyself(false, true);
+        this.transform.gameObject.SetActive(true);
     }
 
     public abstract void GetStrike(int strikeForce, Vector2 hitDir);
@@ -87,24 +87,29 @@ public abstract class Entity
 
     public void CastAttack(Vector2 attackDir)
     {
-        var raycastHit = Physics2D.CircleCastAll(
+        if (this.status == Status.Alive)
+        {
+            var raycastHit = Physics2D.CircleCastAll(
             transform.position + transform.right,
             0.5f + 0.1f * weapon.radius,
             attackDir,
             0.1f + 0.1f * weapon.longitude
         );
-        GameManager.Instance.ResolveHits(
-            this,
-            raycastHit,
-            attackDir,
-            enemyMask
-        );
+            GameManager.Instance.ResolveHits(
+                this,
+                raycastHit,
+                attackDir,
+                enemyMask
+            );
+        }
     }
 
     public bool extraAction = false;
     int comboCounter;
     public void Attack(Vector2 attackDir)
     {
+        //if (GetType() == typeof(Enemy)) EnemiesManager.Instance.ImWaitingForNextAction((Enemy)this);
+
         if (IsAttackAvailable() && !IsCounterAttacking())
         {
             extraAction = true;
@@ -326,7 +331,7 @@ public abstract class Entity
 
     bool IsMoveAvailable()
     {
-        if (!IsDashAvailable() || IsCounterAttacking()) return false;
+        if (!IsDashAvailable() || IsCounterAttacking() || this.status == Status.Dead) return false;
         return Time.time > lastTimeAttack + attackCD * 0.99f;
     }
 
@@ -360,6 +365,8 @@ public abstract class Entity
 
     public void Idle()
     {
+        if (this.status == Status.Dead) return;
+
         if (IsAttackAvailable() && !IsPlayerAttacking() && IsDashAvailable())
         {
             if (IsDashAvailable()) rigidbody.velocity = Vector2.zero;
@@ -370,7 +377,7 @@ public abstract class Entity
     public void ClampMyself(bool clampX, bool clampY)
     {
         transform.position = new Vector2(
-            clampX ? Mathf.Clamp(transform.position.x, CameraController.Instance.maxPlayerDistanceLeft, Mathf.Infinity) : transform.position.x,
+            clampX ? Mathf.Clamp(transform.position.x, CameraController.Instance.maxDistanceLeft, CameraController.Instance.maxDistanceRight) : transform.position.x,
             clampY ? Mathf.Clamp(transform.position.y, -2.77f, 1f) : transform.position.y // HardCoded map boundaries :D
         );
     }
@@ -410,13 +417,15 @@ public class Player : Entity
         this.SaveTransformReferences();
         this.EquipWeapon(weapon);
         this.character.isActive = true;
+        this.status = Status.Alive;
     }
 
     public override void Die()
     {
         transform.gameObject.layer = LayerMask.NameToLayer("Ghost");
-        this.isActive = false;
         PlayAnim("Die");
+        this.isActive = false;
+        this.status = Status.Dead;
     }
 
     public override void Update()
@@ -471,24 +480,36 @@ public class Enemy : Entity
     public override void Die()
     {
         transform.gameObject.layer = LayerMask.NameToLayer("Ghost");
-        PlayAnim("Die");
         GameManager.Instance.RemoveEnemy(this);
+        PlayAnim("Die");
+        this.isActive = false;
+        this.status = Status.Dead;
     }
+
 
     public override void Update()
     {
-        //ClampMyself(false, true);
+        //ClampMyself(true, true);
     }
 
+    public void WaitForNextAction()
+    {
+        EnemiesManager.Instance.ImWaitingForNextAction(this);
+    }
+
+    public float lastTimeStriked = 0f;
     public override void GetStrike(int strikeForce, Vector2 hitDir)
     {
+        lastTimeStriked = Time.time;
         EnemiesManager.Instance.StopEnemyRoutine(this.ID);
-        PlayAnim("Hit");
         rigidbody.AddForce(hitDir.normalized * strikeForce, ForceMode2D.Impulse);
         stats.life -= strikeForce;
         if (stats.life > 0)
         {
             // No muero
+            WaitForNextAction();
+            PlayAnim("Hit");
+
         }
         else
         {

@@ -14,8 +14,8 @@ public class CameraController : MonoBehaviour
     public float velocity = 1.3f;
     public float backDistanceMax = 20f;
 
-    public float maxPlayerDistanceLeft;
-    //public float maxPlayerDistanceRight;
+    public float maxDistanceLeft;
+    public float maxDistanceRight;
 
     Camera mainCamera;
     Vector3 target;
@@ -42,13 +42,39 @@ public class CameraController : MonoBehaviour
         UpdateCameraClampValue();
     }
 
+    public bool battleMode = false;
+    float maxCameraLimitX;
+    float minCameraLimitX;
+    public void SetBattleMode(bool battleON)
+    {
+        minCameraLimitX = transform.position.x - backDistanceMax;
+        maxCameraLimitX = transform.position.x + backDistanceMax;
+        battleMode = battleON;
+        StartCoroutine(ChangeExtraCameraValue(battleON ? 0f : 9f));
+    }
+
+    IEnumerator ChangeExtraCameraValue(float finalValue)
+    {
+        while (extraX != finalValue)
+        {
+            extraX = Mathf.MoveTowards(extraX, finalValue, Time.deltaTime * velocity);
+            yield return new WaitForEndOfFrame();
+        }
+    }
+
+    float maxDistanceCameraX;
+    float extraX = 6;
+
     private void FollowTarget()
     {
         target = playerT.position;
         transform.position = new Vector3(
             Mathf.Lerp(
                 transform.position.x,
-                Mathf.Clamp(target.x + 1, minPosX - backDistanceMax, Mathf.Infinity),
+                battleMode ?
+                    Mathf.Clamp(target.x + extraX, minCameraLimitX, maxCameraLimitX) :
+                    Mathf.Clamp(target.x + extraX, minPosX - backDistanceMax, Mathf.Infinity)
+                ,
                 Time.deltaTime * velocity
                 ),
             transform.position.y,
@@ -60,8 +86,8 @@ public class CameraController : MonoBehaviour
     private void UpdateCameraClampValue()
     {
         if (minPosX < playerT.position.x) minPosX = playerT.position.x;
-        maxPlayerDistanceLeft = mainCamera.ViewportToWorldPoint(new Vector3(mainCamera.rect.xMin, 0, 0)).x;
-        //maxPlayerDistanceRight = mainCamera.ViewportToWorldPoint(new Vector3(mainCamera.rect.xMax, 0, 0)).x;
+        maxDistanceLeft = mainCamera.ViewportToWorldPoint(new Vector3(mainCamera.rect.xMin, 0, 0)).x;
+        maxDistanceRight = mainCamera.ViewportToWorldPoint(new Vector3(mainCamera.rect.xMax, 0, 0)).x;
     }
 
     private void MoveBackground()
