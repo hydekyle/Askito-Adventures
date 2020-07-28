@@ -106,7 +106,7 @@ public class GameManager : MonoBehaviour
     {
         for (var x = 0; x < enemySpawnAmount; x++)
         {
-            SpawnEnemyRandom();
+            SpawnEnemy(x + 1);
             yield return new WaitForEndOfFrame();
         }
         onEnded.Invoke();
@@ -201,14 +201,14 @@ public class GameManager : MonoBehaviour
         return enemyCounter + 1 < enemies.Length ? enemyCounter++ : 0;
     }
 
-    public void SpawnEnemyRandom()
+    public void SpawnEnemy(int enemyNumber)
     {
         bool spawnOnLeft = UnityEngine.Random.Range(0, 4) % 2 == 0 ? true : false;
         var mainCamera = Camera.main;
         var finalPos = new Vector3(
                 spawnOnLeft ?
-                CameraController.Instance.maxDistanceLeft - 1 - UnityEngine.Random.Range(0f, 1f) :
-                CameraController.Instance.maxDistanceRight + 1 + UnityEngine.Random.Range(0f, 1f),
+                CameraController.Instance.maxDistanceLeft - enemyNumber - UnityEngine.Random.Range(0f, 1f) :
+                CameraController.Instance.maxDistanceRight + enemyNumber + UnityEngine.Random.Range(0f, 1f),
                 UnityEngine.Random.Range(minY, maxY),
                 0
         );
