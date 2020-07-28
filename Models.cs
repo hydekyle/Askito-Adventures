@@ -123,8 +123,7 @@ public abstract class Entity
             comboCounter++;
             lastTimeAttack = Time.time;
             lastTimeAttackCombo = Time.time;
-            rigidbody.velocity = attackDir;
-            SlashAttack(attackDir, 0.8f);
+            SlashAttack(attackDir, 0.2f);
             PlayAnim(comboCounter % 2 == 0 ? "Attack" : "AttackCombo");
         }
         else
@@ -133,6 +132,17 @@ public abstract class Entity
             extraAction = false;
         }
 
+    }
+
+    float lastTimeCounterAttack = 0f;
+
+    public void PrepareCounterAttack()
+    {
+        if (!IsCounterAttacking())
+        {
+            lastTimeCounterAttack = Time.time;
+            PlayAnim("Cast1H");
+        }
     }
 
     public void CounterAttack(Vector2 attackDir)
@@ -171,17 +181,6 @@ public abstract class Entity
             PlayAnim("Dash");
             lastTimeDash = Time.time;
             ApplyImpulse(dashDir);
-        }
-    }
-
-    float lastTimeCounterAttack = 0f;
-
-    public void CounterAttack()
-    {
-        if (!IsCounterAttacking())
-        {
-            lastTimeCounterAttack = Time.time;
-            PlayAnim("Cast1H");
         }
     }
 

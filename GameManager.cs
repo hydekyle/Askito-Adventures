@@ -534,7 +534,7 @@ public class GameManager : MonoBehaviour
             {
                 if (new Vector2(xAxis, yAxis).normalized == Vector2.zero)
                 {
-                    player.CounterAttack();
+                    player.PrepareCounterAttack();
                 }
                 else
                 {
