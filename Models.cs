@@ -91,7 +91,7 @@ public abstract class Entity
         {
             var raycastHit = Physics2D.CircleCastAll(
             transform.position + transform.right,
-            0.5f + 0.1f * weapon.radius,
+            0.1f + 0.1f * weapon.radius,
             attackDir,
             0.1f + 0.1f * weapon.longitude
         );
@@ -147,7 +147,6 @@ public abstract class Entity
 
     public void CounterAttack(Vector2 attackDir)
     {
-        Debug.Log("Counter");
         lastTimeAttack = Time.time;
         rigidbody.AddForce(attackDir);
         SetOrientation(attackDir.x);
@@ -189,7 +188,7 @@ public abstract class Entity
         //if (clipName != "Alert" && clipName != "Walk") Debug.Log(clipName);
 
         if (clipName == "Dash") character.Animator.Play(clipName);
-        else if (clipName == "Attack" && Time.time < lastTimeDash + dashCD)
+        else if (clipName == "Attack" && Time.time < lastTimeDash + dashCD / 2)
         {
             AttackDash();
             return;
@@ -308,7 +307,7 @@ public abstract class Entity
 
     public void SlashEffect()
     {
-        AttackAnimator.Play("Slash1", 0);
+        //AttackAnimator.Play("Slash1", 0);
     }
 
     public void MoveToDirection(Vector2 direction)
@@ -407,7 +406,7 @@ public class Player : Entity
         this.transform = transform;
         this.stats = stats;
         this.name = name;
-        this.character = transform.GetComponent<Character>();
+        this.character = transform.GetChild(0).GetComponent<Character>();
         this.AttackAnimator = transform.Find("Attack_Effect").GetComponent<Animator>();
         this.rigidbody = transform.GetComponent<Rigidbody2D>();
         this.SetAnimVelocity(1);
@@ -467,7 +466,7 @@ public class Enemy : Entity
         this.stats = stats;
         this.name = name;
         this.ID = ID;
-        this.character = transform.GetComponent<Character>();
+        this.character = transform.GetChild(0).GetComponent<Character>();
         this.AttackAnimator = transform.Find("Attack_Effect").GetComponent<Animator>();
         this.rigidbody = transform.GetComponent<Rigidbody2D>();
         this.SetAnimVelocity(1);

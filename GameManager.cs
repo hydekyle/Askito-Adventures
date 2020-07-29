@@ -204,6 +204,7 @@ public class GameManager : MonoBehaviour
     public void SpawnEnemy(int enemyNumber)
     {
         bool spawnOnLeft = UnityEngine.Random.Range(0, 4) % 2 == 0 ? true : false;
+        if (spawnOnLeft) enemyNumber++;
         var mainCamera = Camera.main;
         var finalPos = new Vector3(
                 spawnOnLeft ?
@@ -493,7 +494,7 @@ public class GameManager : MonoBehaviour
 
                         if (enemyCount > 0) // Retroceso al golpear
                         {
-                            myself.ApplyImpulse(-attackDir / 2);
+                            myself.ApplyImpulse(-attackDir / 4);
                             //myself.padVibration = 0.666f;
                         }
                         else if (enemyCount < breakableCount)

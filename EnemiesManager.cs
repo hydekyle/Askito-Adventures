@@ -85,13 +85,13 @@ public class EnemiesManager : MonoBehaviour
         while (distanceToPlayer > 1.4f && enemy.status == Status.Alive);
 
         enemy.Idle();
-        yield return new WaitForSeconds(UnityEngine.Random.Range(0.25f, 0.4f));
+        yield return new WaitForSeconds(UnityEngine.Random.Range(0.1f, 0.22f));
 
         if (initialLife == enemy.stats.life && player.isActive)
         {
             enemy.MoveToDirection((target.position - enemy.transform.position).normalized);
             enemy.PlayAnim("Attack");
-            StartCoroutine(Waiter(UnityEngine.Random.Range(0.4f, 0.7f), () =>
+            StartCoroutine(Waiter(UnityEngine.Random.Range(0.5f, 0.75f), () =>
             {
                 if (enemy.status == Status.Alive) ImWaitingForNextAction(enemy);
             }));
