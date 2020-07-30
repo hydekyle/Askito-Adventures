@@ -34,5 +34,15 @@ public class SoundManager : MonoBehaviour
         audioSource.PlayOneShot(sounds.comboFailure);
     }
 
+    public void PlayHitSlash()
+    {
+        audioSource.PlayOneShot(sounds.hitSlash);
+    }
+
+    public void PlayHitPlayer()
+    {
+        audioSource.PlayOneShot(sounds.hitPlayer);
+    }
+
 
 }

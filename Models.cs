@@ -454,6 +454,7 @@ public class Player : Entity
 
         rigidbody.AddForce(hitDir.normalized * strikeForce, ForceMode2D.Impulse);
         stats.life -= strikeForce;
+        SoundManager.Instance.PlayHitPlayer();
         if (stats.life > 0)
         {
             Debug.Log("Me hacen pupa");
@@ -506,6 +507,7 @@ public class Enemy : Entity
     public float lastTimeStriked = 0f;
     public override void GetStrike(int strikeForce, Vector2 hitDir)
     {
+        SoundManager.Instance.PlayHitSlash();
         lastTimeStriked = Time.time;
         EnemiesManager.Instance.StopEnemyRoutine(this.ID);
         rigidbody.AddForce(hitDir.normalized * strikeForce, ForceMode2D.Impulse);
@@ -515,7 +517,6 @@ public class Enemy : Entity
             // No muero
             WaitForNextAction();
             PlayAnim("Hit");
-
         }
         else
         {

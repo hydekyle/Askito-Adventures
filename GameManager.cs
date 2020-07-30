@@ -256,7 +256,7 @@ public class GameManager : MonoBehaviour
 
         Player newPlayer = new Player(
             playerTransform,
-            new Stats() { life = 1, strength = 1, velocity = 2 },
+            new Stats() { life = 6, strength = 1, velocity = 2 },
             tableWeapons.common[0],
             playerName
         );
@@ -531,7 +531,9 @@ public class GameManager : MonoBehaviour
         {
             if (Mathf.Abs(xAxis) > 0.0f || Mathf.Abs(yAxis) > 0.0f)
             {
-                player.MoveToDirection(new Vector2(Input.GetAxis("Horizontal"), Input.GetAxis("Vertical")));
+                if (Input.GetButton("Fire2")) player.MoveToDirection(new Vector2(xAxis * 1.5f, yAxis * 1.5f));
+                else player.MoveToDirection(new Vector2(xAxis, yAxis));
+
             }
             else player.Idle();
 
