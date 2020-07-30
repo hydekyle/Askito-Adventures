@@ -515,6 +515,11 @@ public class GameManager : MonoBehaviour
         cullingManager?.Dispose();
     }
 
+    public void GameOver()
+    {
+        SoundManager.Instance.PlayGameOver();
+    }
+
     int wIndex = 0;
 
     private void Controls()

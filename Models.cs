@@ -87,6 +87,7 @@ public abstract class Entity
 
     public void CastAttack(Vector2 attackDir)
     {
+        SoundManager.Instance.PlayAttack();
         if (this.status == Status.Alive)
         {
             var raycastHit = Physics2D.CircleCastAll(
@@ -121,14 +122,18 @@ public abstract class Entity
         else if (IsComboAttackAvailable() && extraAction)
         {
             comboCounter++;
-            lastTimeAttack = Time.time;
-            lastTimeAttackCombo = Time.time;
+            lastTimeAttackHitWhenCombo = lastTimeAttackHit;
+            lastTimeAttackCombo = lastTimeAttack = Time.time;
             SlashAttack(attackDir, 0.2f);
             PlayAnim(comboCounter % 2 == 0 ? "Attack" : "AttackCombo");
+            SoundManager.Instance.PlayComboSuccess();
         }
-        else
+        else if (comboCounter > 0)
         {
             // Si vuelves a atacar sin haber golpeado (El Spam no mola)
+            SoundManager.Instance.PlayComboFailure();
+            comboCounter = 0;
+
             extraAction = false;
         }
 
@@ -344,9 +349,11 @@ public abstract class Entity
         return Time.time > lastTimeAttack + attackCD;
     }
 
+    float lastTimeAttackHitWhenCombo;
     bool IsComboAttackAvailable()
     {
-        return Time.time < lastTimeAttackHit + attackCD / 2;
+        return Time.time < lastTimeAttackHit + attackCD / 2 &&
+                lastTimeAttackHit != lastTimeAttackHitWhenCombo;
     }
 
     float attackTime = 0.5f;
@@ -424,6 +431,7 @@ public class Player : Entity
         PlayAnim("Die");
         this.isActive = false;
         this.status = Status.Dead;
+        GameManager.Instance.GameOver();
     }
 
     public override void Update()

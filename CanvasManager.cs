@@ -38,6 +38,8 @@ public class CanvasManager : MonoBehaviour
         {
             SetMusicVolume(PlayerPrefs.GetFloat("MusicVolume"));
             SetSoundVolume(PlayerPrefs.GetFloat("SoundVolume"));
+            sliderMusic.value = PlayerPrefs.GetFloat("MusicVolume");
+            sliderSound.value = PlayerPrefs.GetFloat("SoundVolume");
         }
     }
 
@@ -53,14 +55,8 @@ public class CanvasManager : MonoBehaviour
 
     public void MenuOptionsSetActive(bool active)
     {
-        if (active && PlayerPrefs.HasKey("MusicVolume"))
+        if (!active)
         {
-            sliderMusic.value = PlayerPrefs.GetFloat("MusicVolume");
-            sliderSound.value = PlayerPrefs.GetFloat("SoundVolume");
-        }
-        else
-        {
-            // Guardar ajustes al cerrar el menú
             PlayerPrefs.SetFloat("MusicVolume", sliderMusic.value);
             PlayerPrefs.SetFloat("SoundVolume", sliderSound.value);
         }
@@ -81,14 +77,12 @@ public class CanvasManager : MonoBehaviour
 
     private void SetMusicVolume(float value)
     {
-        var musicValue = Mathf.Clamp(-80f + value, -80f, 0f);
-        audioMixer.SetFloat("MusicVolume", musicValue);
+        audioMixer.SetFloat("MusicVolume", Mathf.Log(value) * 20);
     }
 
     private void SetSoundVolume(float value)
     {
-        var soundValue = Mathf.Clamp(-80f + value, -80f, 0f);
-        audioMixer.SetFloat("SoundVolume", soundValue);
+        audioMixer.SetFloat("SoundVolume", Mathf.Log(value) * 20);
     }
 
 }
