@@ -40,7 +40,12 @@ public class EnemiesManager : MonoBehaviour
             {
                 Enemy enemy = waitingForAction[0];
                 waitingForAction.RemoveAt(0);
-                if (enemy.status == Status.Alive) StartCoroutine(ApproachToPlayerAndAttack(enemy, player.transform));
+                if (enemy.status == Status.Alive)
+                {
+                    StopCoroutine(rutinas[enemy.ID]);
+                    rutinas[enemy.ID] = ApproachToPlayerAndAttack(enemy, player.transform);
+                    StartCoroutine(rutinas[enemy.ID]);
+                }
             }
             yield return new WaitForSeconds(UnityEngine.Random.Range(0.3f, 0.55f)); //Tiempo para ir dando nuevas acciones
         }

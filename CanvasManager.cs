@@ -78,6 +78,7 @@ public class CanvasManager : MonoBehaviour
 
     private void SetMusicVolume(float value)
     {
+        print("M" + value);
         audioMixer.SetFloat("MusicVolume", Mathf.Log(value) * 20);
     }
 

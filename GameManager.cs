@@ -346,7 +346,7 @@ public class GameManager : MonoBehaviour
     {
         yield return new WaitForSeconds(2.5f);
         entity.transform.position -= Vector3.right * 100; // Evitando bug de rotación en la animación de forma poco elegante
-        entity.PlayAnim("Attack");
+        entity.PlayAnim("Alert");
         yield return new WaitForSeconds(0.1f);
         entity.headT.gameObject.SetActive(true);
         entity.armRightT.gameObject.SetActive(true);
@@ -395,7 +395,7 @@ public class GameManager : MonoBehaviour
 
     public void VibrationForce(long force)
     {
-        Vibration.Vibrate(13 + force);
+        Vibration.Vibrate(16 + force);
     }
 
     public void ResolveHits(Entity myself, RaycastHit2D[] raycastHit, Vector2 attackDir, LayerMask enemyMask)

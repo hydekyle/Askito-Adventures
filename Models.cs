@@ -152,10 +152,10 @@ public abstract class Entity
 
     public void CounterAttack(Vector2 attackDir)
     {
-        lastTimeAttack = Time.time;
+        // lastTimeAttack = Time.time;
+        lastTimeDash = Time.time;
         rigidbody.AddForce(attackDir);
         SetOrientation(attackDir.x);
-        lastTimeDash = Time.time;
         CastAttack(attackDir);
         character.Animator.Play("AttackCounter");
     }
