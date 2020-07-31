@@ -270,7 +270,7 @@ public class GameManager : MonoBehaviour
         player.stats = cheatStats;
     }
 
-    private void RestartScene()
+    public void RestartScene()
     {
         Scene thisScene = SceneManager.GetActiveScene();
         SceneManager.LoadScene(thisScene.name);
@@ -518,6 +518,7 @@ public class GameManager : MonoBehaviour
     public void GameOver()
     {
         SoundManager.Instance.PlayGameOver();
+        CanvasManager.Instance.ShowRetry();
     }
 
     int wIndex = 0;
@@ -556,7 +557,7 @@ public class GameManager : MonoBehaviour
         if (Input.GetButtonDown("Jump"))
         {
             if (player.isActive) ShootBomb(player.transform);
-            else SceneManager.LoadScene(0);
+            else RestartScene();
         }
 
 #if UNITY_EDITOR

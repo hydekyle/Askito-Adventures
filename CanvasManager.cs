@@ -13,6 +13,7 @@ public class CanvasManager : MonoBehaviour
     public GameObject menuOptions;
     public Slider sliderMusic, sliderSound;
     public AudioMixer audioMixer;
+    public GameObject retryGO;
 
     public Image avatarTweeter;
 
@@ -83,6 +84,16 @@ public class CanvasManager : MonoBehaviour
     private void SetSoundVolume(float value)
     {
         audioMixer.SetFloat("SoundVolume", Mathf.Log(value) * 20);
+    }
+
+    public void ShowRetry()
+    {
+        retryGO.GetComponent<Animator>().Play("RetryUp", 0);
+    }
+
+    public void Retry()
+    {
+        GameManager.Instance.RestartScene();
     }
 
 }

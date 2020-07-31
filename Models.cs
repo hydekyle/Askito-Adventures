@@ -452,12 +452,11 @@ public class Player : Entity
 
         if (lastTimeDash + inmuneTimeAfterDash > Time.time) return;
 
-        rigidbody.AddForce(hitDir.normalized * strikeForce, ForceMode2D.Impulse);
         stats.life -= strikeForce;
         SoundManager.Instance.PlayHitPlayer();
         if (stats.life > 0)
         {
-            Debug.Log("Me hacen pupa");
+            PlayAnim("Hit");
         }
         else
         {
