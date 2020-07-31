@@ -38,16 +38,16 @@ public class EnemiesManager : MonoBehaviour
         {
             if (waitingForAction.Count > 0)
             {
+                var random = UnityEngine.Random.Range(0, 10);
                 Enemy enemy = waitingForAction[0];
                 waitingForAction.RemoveAt(0);
                 if (enemy.status == Status.Alive)
                 {
-                    StopCoroutine(rutinas[enemy.ID]);
-                    rutinas[enemy.ID] = ApproachToPlayerAndAttack(enemy, player.transform);
-                    StartCoroutine(rutinas[enemy.ID]);
+                    if (random % 2 == 0) SetEnemyRoutine(enemy, ApproachToPlayerAndAttack(enemy, player.transform));
+                    else SetEnemyRoutine(enemy, AproachToWorldPoint(enemy, CameraController.Instance.GetRandomValidPosition()));
                 }
             }
-            yield return new WaitForSeconds(UnityEngine.Random.Range(0.3f, 0.55f)); //Tiempo para ir dando nuevas acciones
+            yield return new WaitForSeconds(UnityEngine.Random.Range(0.2f, 0.33f)); //Tiempo para ir dando nuevas acciones
         }
     }
 
@@ -56,24 +56,50 @@ public class EnemiesManager : MonoBehaviour
         if (enemy.status == Status.Alive && !waitingForAction.Contains(enemy)) waitingForAction.Add(enemy);
     }
 
-    public void SendAllEnemiesToAttack()
+    private void SetEnemyRoutine(Enemy enemy, IEnumerator rutina)
+    {
+        if (rutinas[enemy.ID] != null) StopCoroutine(rutinas[enemy.ID]);
+        rutinas[enemy.ID] = rutina;
+        StartCoroutine(rutinas[enemy.ID]);
+    }
+
+    public void SetActionForAllEnemies()
     {
         for (var x = 0; x < GM.enemies.Length; x++)
         {
-            if (GM.enemies[x].status == Status.Alive)
+            Enemy enemy = GM.enemies[x];
+            if (enemy.status == Status.Alive)
             {
-                float distanceToPlayer = Vector2.Distance(player.transform.position, GM.enemies[x].transform.position);
+
+                var random = UnityEngine.Random.Range(0, 10);
+                float distanceToPlayer = Vector2.Distance(player.transform.position, enemy.transform.position);
                 if (distanceToPlayer > 1.4f)
                 {
-                    if (rutinas[x] != null) StopCoroutine(rutinas[x]);
-                    rutinas[x] = ApproachToPlayerAndAttack(GM.enemies[x], player.transform);
-                    StartCoroutine(rutinas[x]);
+                    if (random % 2 == 0) SetEnemyRoutine(enemy, ApproachToPlayerAndAttack(enemy, player.transform));
+                    else SetEnemyRoutine(enemy, AproachToWorldPoint(enemy, CameraController.Instance.GetRandomValidPosition()));
                 }
             }
         }
     }
 
     public IEnumerator[] rutinas;
+
+    IEnumerator AproachToWorldPoint(Enemy enemy, Vector3 targetPosition)
+    {
+        float distanceToPlayer;
+        float distanceToTarget;
+        do
+        {
+            Vector2 dir = (targetPosition - enemy.transform.position).normalized;
+            distanceToPlayer = Vector2.Distance(enemy.transform.position, player.transform.position);
+            distanceToTarget = Vector2.Distance(enemy.transform.position, targetPosition);
+            enemy.MoveToDirection(dir);
+            yield return new WaitForFixedUpdate();
+        }
+        while (distanceToTarget > 2f && distanceToPlayer > 2.5f);
+        enemy.Idle();
+        ImWaitingForNextAction(enemy);
+    }
 
     IEnumerator ApproachToPlayerAndAttack(Enemy enemy, Transform target)
     {

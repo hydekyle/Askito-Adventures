@@ -49,6 +49,8 @@ public abstract class Entity
     float dashCD = 0.5f;
     float attackCD = 0.6f;
 
+    public bool isPlayer = false;
+
     public Transform headT, armLeftT, armRightT, legLeftT, legRightT;
 
     public abstract void Die();
@@ -106,7 +108,7 @@ public abstract class Entity
     }
 
     public bool extraAction = false;
-    int comboCounter;
+    int comboCounter = 0;
     public void Attack(Vector2 attackDir)
     {
         //if (GetType() == typeof(Enemy)) EnemiesManager.Instance.ImWaitingForNextAction((Enemy)this);
@@ -131,9 +133,8 @@ public abstract class Entity
         else if (comboCounter > 0)
         {
             // Si vuelves a atacar sin haber golpeado (El Spam no mola)
-            SoundManager.Instance.PlayComboFailure();
+            if (isPlayer) SoundManager.Instance.PlayComboFailure();
             comboCounter = 0;
-
             extraAction = false;
         }
 
@@ -423,6 +424,7 @@ public class Player : Entity
         this.EquipWeapon(weapon);
         this.character.isActive = true;
         this.status = Status.Alive;
+        this.isPlayer = true;
     }
 
     public override void Die()

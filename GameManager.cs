@@ -90,7 +90,7 @@ public class GameManager : MonoBehaviour
         Camera mainCamera = Camera.main;
         StartCoroutine(MrSpawner(enemySpawnAmount, () =>
         {
-            EnemiesManager.Instance.SendAllEnemiesToAttack();
+            EnemiesManager.Instance.SetActionForAllEnemies();
         }));
     }
 
@@ -463,17 +463,17 @@ public class GameManager : MonoBehaviour
                         {
                             GameManager.Instance.BreakBreakable(hit.transform, hitDir);
                             breakableCount++;
-                            VibrationForce(10);
+                            VibrationForce(15);
                         }
 
                         else if (hitLayer == enemyMask)
                         {
-                            if (myself.GetType() == typeof(Player)) // Si soy el jugador... (cambiar esto de sitio)
+                            if (myself.isPlayer)
                             {
                                 Entity enemy = GameManager.Instance.GetEnemyByName(hit.transform.name);
                                 if (enemy != null)
                                 {
-                                    VibrationForce(18);
+                                    VibrationForce(20);
                                     ShowHitEffect(hit.transform.position);
                                     myself.StrikeEntity(enemy, hitDir);
                                     enemyCount++;

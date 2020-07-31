@@ -18,10 +18,15 @@ public class CameraController : MonoBehaviour
     public float maxDistanceRight;
 
     Camera mainCamera;
-    Vector3 target;
+    float targetX;
     float cameraSize = 4.44f;
     float minPosX;
     public bool followActive = true;
+
+    public bool battleMode = false;
+    float maxCameraLimitX, minCameraLimitX;
+    float finalValue = 7;
+    float extraX = 6;
 
     private void Awake()
     {
@@ -40,40 +45,53 @@ public class CameraController : MonoBehaviour
     {
         if (followActive) FollowTarget();
         UpdateCameraClampValue();
+        UpdateExtraValue();
     }
 
-    public bool battleMode = false;
-    float maxCameraLimitX;
-    float minCameraLimitX;
     public void SetBattleMode(bool battleON)
     {
         minCameraLimitX = transform.position.x - backDistanceMax;
         maxCameraLimitX = transform.position.x + backDistanceMax;
         battleMode = battleON;
-        StartCoroutine(ChangeExtraCameraValue(battleON ? 0f : 9f));
+        if (battleON)
+        {
+            finalValue = 0f;
+            GetMapPosValues();
+        }
+        else finalValue = 9f;
     }
 
-    IEnumerator ChangeExtraCameraValue(float finalValue)
+    public void GetMapPosValues()
     {
-        while (extraX != finalValue)
+
+    }
+
+    public Vector3 GetRandomValidPosition()
+    {
+        float xValue = UnityEngine.Random.Range(0.2f, 0.8f);
+        float yValue = UnityEngine.Random.Range(GameManager.Instance.minY, GameManager.Instance.maxY);
+        Vector3 randomPos = mainCamera.ViewportToWorldPoint(new Vector3(xValue, 0f, 0f));
+        randomPos = new Vector3(randomPos.x, yValue, 0f);
+        return randomPos;
+    }
+
+    void UpdateExtraValue()
+    {
+        if (extraX != finalValue)
         {
             extraX = Mathf.MoveTowards(extraX, finalValue, Time.deltaTime * velocity);
-            yield return new WaitForEndOfFrame();
         }
     }
 
-    float maxDistanceCameraX;
-    float extraX = 6;
-
     private void FollowTarget()
     {
-        target = playerT.position;
+        targetX = playerT.position.x;
         transform.position = new Vector3(
             Mathf.Lerp(
                 transform.position.x,
                 battleMode ?
-                    Mathf.Clamp(target.x + extraX, minCameraLimitX, maxCameraLimitX) :
-                    Mathf.Clamp(target.x + extraX, minPosX - backDistanceMax, Mathf.Infinity)
+                    Mathf.Clamp(targetX + extraX, minCameraLimitX, maxCameraLimitX) :
+                    Mathf.Clamp(targetX + extraX, minPosX - backDistanceMax, Mathf.Infinity)
                 ,
                 Time.deltaTime * velocity
                 ),
