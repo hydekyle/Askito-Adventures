@@ -13,6 +13,8 @@ public class GameManager : MonoBehaviour
 {
     public static GameManager Instance;
 
+    public bool isPacificLevel;
+
     public ScriptableWeapons tableWeapons;
 
     public DialogManager dialogManager;
@@ -69,9 +71,24 @@ public class GameManager : MonoBehaviour
         Initialize();
     }
 
+    private void Initialize()
+    {
+        //admob = new AdmobManager();
+        //db = new Db();
+        if (!isPacificLevel)
+        {
+            GeneratePools();
+            SetMapSpriteOrders();
+            AllocateEnemies();
+        }
+        SpawnPlayer("Player");
+        //cullingManager = new CullingManager();
+        //StartCoroutine(RutinaEnemigos());
+    }
+
     private void Start()
     {
-        LagSpikesResolver();
+        if (!isPacificLevel) LagSpikesResolver();
     }
 
     int enemySpawnAmount = 2;
@@ -120,18 +137,6 @@ public class GameManager : MonoBehaviour
         ShootBomb(origin);
     }
 
-    private void Initialize()
-    {
-        //admob = new AdmobManager();
-        //db = new Db();
-        GeneratePools();
-        SetMapSpriteOrders();
-        SpawnPlayer("Player");
-        AllocateEnemies();
-        //cullingManager = new CullingManager();
-        //StartCoroutine(RutinaEnemigos());
-    }
-
     private void GeneratePools()
     {
         bulletsPool = EZObjectPool.CreateObjectPool(shootPrefab, "Shoot1", 20, true, true, true);
@@ -177,6 +182,9 @@ public class GameManager : MonoBehaviour
         {
             Controls();
             player.Update();
+        }
+        if (!isPacificLevel)
+        {
             if (player.transform.position.x > totalBattles * 15 && !battleIsActive && Time.time > timeLastBattleEnd + 3f) BattleStart();
         }
     }
@@ -521,8 +529,18 @@ public class GameManager : MonoBehaviour
         CanvasManager.Instance.ShowRetry();
     }
 
-    int wIndex = 0;
+    public void Interact()
+    {
+        RaycastHit2D[] results = Physics2D.CircleCastAll(player.transform.position, 0.5f, player.transform.right, 1f, interactableMask);
+        if (results.Length > 0)
+        {
+            results[0].transform.SendMessage("OnPlayerInteraction");
+        }
 
+    }
+
+    int wIndex = 0;
+    public LayerMask interactableMask;
     private void Controls()
     {
         float xAxis = Input.GetAxis("Horizontal");
@@ -538,7 +556,11 @@ public class GameManager : MonoBehaviour
             }
             else player.Idle();
 
-            if (Input.GetButtonDown("Attack")) player.Attack(new Vector2(xAxis, yAxis));
+            if (Input.GetButtonDown("Attack"))
+            {
+                if (isPacificLevel) Interact();
+                else player.Attack(new Vector2(xAxis, yAxis));
+            }
             else if (Input.GetButtonDown("Fire2"))
             {
                 if (new Vector2(xAxis, yAxis).normalized == Vector2.zero)
@@ -551,14 +573,14 @@ public class GameManager : MonoBehaviour
                 }
 
             }
-            else if (Input.GetButtonDown("Fire3")) player.ShootWeapon();
+            //else if (Input.GetButtonDown("Fire3")) player.ShootWeapon();
         }
 
-        if (Input.GetButtonDown("Jump"))
-        {
-            if (player.isActive) ShootBomb(player.transform);
-            else RestartScene();
-        }
+        // if (Input.GetButtonDown("Jump"))
+        // {
+        //     if (player.isActive) ShootBomb(player.transform);
+        //     else RestartScene();
+        // }
 
 #if UNITY_EDITOR
         if (Input.GetKeyDown(KeyCode.F1))

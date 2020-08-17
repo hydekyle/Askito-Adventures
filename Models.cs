@@ -21,8 +21,8 @@ public struct Weapon
 
 public enum BodyLimb { Head, LegLeft, LegRight, ArmLeft, ArmRight }
 public enum Status { Alive, Dead }
-public enum behaviorIA { Aggressive, Normal, Defensive }
-public enum typeIA { Normal, Dodger, Caster }
+public enum BehaviorIA { Aggressive, Normal, Defensive }
+public enum TypeIA { Normal, Dodger, Caster }
 
 [Serializable]
 public abstract class Entity
@@ -420,9 +420,10 @@ public class Player : Entity
         this.SetAnimVelocity(1);
         this.enemyMask = LayerMask.NameToLayer("Enemy");
         this.isActive = true;
+        this.character.isActive = true;
         this.SaveTransformReferences();
         this.EquipWeapon(weapon);
-        this.character.isActive = true;
+        if (GameManager.Instance.isPacificLevel) this.character.isActive = false;
         this.status = Status.Alive;
         this.isPlayer = true;
     }
@@ -470,6 +471,9 @@ public class Player : Entity
 [Serializable]
 public class Enemy : Entity
 {
+    public BehaviorIA behavior = BehaviorIA.Normal;
+    public TypeIA typeIA = TypeIA.Normal;
+
     public Enemy(Transform transform, Stats stats, Weapon weapon, string name, int ID)
     {
         this.transform = transform;

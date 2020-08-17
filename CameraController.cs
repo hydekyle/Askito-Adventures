@@ -24,7 +24,8 @@ public class CameraController : MonoBehaviour
     public bool followActive = true;
 
     public bool battleMode = false;
-    float maxCameraLimitX, minCameraLimitX;
+    bool isPacificMap;
+    public float minCameraLimitX = -999f, maxCameraLimitX = 999f;
     float finalValue = 7;
     float extraX = 6;
 
@@ -39,13 +40,16 @@ public class CameraController : MonoBehaviour
     {
         playerT = GameManager.Instance.playerTransform;
         minPosX = playerT.position.x;
+        isPacificMap = GameManager.Instance.isPacificLevel;
+        minCameraLimitX = -999f;
+        maxCameraLimitX = 999f;
     }
 
     private void Update()
     {
-        if (followActive) FollowTarget();
         UpdateCameraClampValue();
-        UpdateExtraValue();
+        if (followActive) FollowTarget();
+        if (!isPacificMap) UpdateExtraValue();
     }
 
     public void SetBattleMode(bool battleON)
@@ -83,16 +87,21 @@ public class CameraController : MonoBehaviour
         }
     }
 
-    private void FollowTarget()
+    private float TargetCamPosX()
     {
         targetX = playerT.position.x;
+        if (isPacificMap) return Mathf.Clamp(targetX, minCameraLimitX, maxCameraLimitX);
+        return battleMode ?
+                    Mathf.Clamp(targetX + extraX, minCameraLimitX, maxCameraLimitX) :
+                    Mathf.Clamp(targetX + extraX, minPosX - backDistanceMax, Mathf.Infinity);
+    }
+
+    private void FollowTarget()
+    {
         transform.position = new Vector3(
             Mathf.Lerp(
                 transform.position.x,
-                battleMode ?
-                    Mathf.Clamp(targetX + extraX, minCameraLimitX, maxCameraLimitX) :
-                    Mathf.Clamp(targetX + extraX, minPosX - backDistanceMax, Mathf.Infinity)
-                ,
+                TargetCamPosX(),
                 Time.deltaTime * velocity
                 ),
             transform.position.y,
