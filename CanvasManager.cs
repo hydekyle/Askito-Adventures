@@ -1,9 +1,9 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
-using UnityEngine;
 using TMPro;
-using UnityEngine.UI;
+using UnityEngine;
 using UnityEngine.Audio;
+using UnityEngine.UI;
 
 public class CanvasManager : MonoBehaviour
 {
@@ -14,6 +14,7 @@ public class CanvasManager : MonoBehaviour
     public Slider sliderMusic, sliderSound;
     public AudioMixer audioMixer;
     public GameObject retryGO;
+    public GameObject ligthPuzzleGO;
 
     public Image avatarTweeter;
 
@@ -94,6 +95,11 @@ public class CanvasManager : MonoBehaviour
     public void Retry()
     {
         GameManager.Instance.RestartScene();
+    }
+
+    public void LightPuzzleSetActive(bool active)
+    {
+        ligthPuzzleGO.SetActive(active);
     }
 
 }

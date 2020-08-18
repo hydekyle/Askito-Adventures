@@ -20,21 +20,34 @@ public class LightPuzzle : MonoBehaviour
 {
     List<ButtonPanel> buttons = new List<ButtonPanel>();
     public float speedChange = 2.5f;
-    bool interactable = true;
+    bool interactable = false;
 
-    private void Start()
+    private void OnDisable()
+    {
+        CanvasManager.Instance.AndroidControlsSetActive(true);
+    }
+
+    private void OnEnable()
+    {
+        CanvasManager.Instance.AndroidControlsSetActive(false);
+        interactable = true;
+        if (buttons.Count == 0) InitializeButtons();
+    }
+
+    private void InitializeButtons()
     {
         byte counter = 0;
-        foreach (Transform t in transform)
+        foreach (Transform t in transform.Find("Buttons"))
         {
             ButtonPanel newButtonPanel = new ButtonPanel()
             {
                 image = t.GetComponent<Image>(),
-                isOn = counter % 3 == 0 ? true : false
+                isOn = true
             };
             buttons.Add(newButtonPanel);
             counter++;
         }
+        SetRandomStatusButtons();
     }
 
     private void Update()
@@ -45,6 +58,7 @@ public class LightPuzzle : MonoBehaviour
     private void SetRandomStatusButtons()
     {
         foreach (var button in buttons) button.isOn = Random.Range(0, 10) % 2 == 0 ? true : false;
+        if (GameIsWon()) SetRandomStatusButtons();
     }
 
     private void ButtonsLerpColor()
@@ -84,15 +98,21 @@ public class LightPuzzle : MonoBehaviour
 
     private void CheckPuzzleStatus()
     {
-        foreach (var button in buttons) if (!button.isOn) return;
+        if (!GameIsWon()) return;
         interactable = false;
         Invoke("Win", 3f);
     }
 
+    private bool GameIsWon()
+    {
+        foreach (var button in buttons) if (!button.isOn) return false;
+        return true;
+    }
+
     private void Win()
     {
+        CanvasManager.Instance.LightPuzzleSetActive(false);
         SetRandomStatusButtons();
-        interactable = true;
         print("¡Has ganado!");
     }
 
