@@ -1,6 +1,15 @@
 ﻿using System;
+using System.Collections;
 using UnityEngine;
 using Assets.FantasyHeroes.Scripts;
+
+[Serializable]
+public struct Item
+{
+    public Sprite sprite;
+    public string name;
+    public string description;
+}
 
 [Serializable]
 public struct Stats
@@ -384,7 +393,7 @@ public abstract class Entity
     {
         transform.position = new Vector2(
             clampX ? Mathf.Clamp(transform.position.x, CameraController.Instance.maxDistanceLeft, CameraController.Instance.maxDistanceRight) : transform.position.x,
-            clampY ? Mathf.Clamp(transform.position.y, -2.77f, 1f) : transform.position.y // HardCoded map boundaries :D
+            clampY ? Mathf.Clamp(transform.position.y, GameManager.Instance.minY, GameManager.Instance.maxY) : transform.position.y
         );
     }
 
@@ -504,9 +513,9 @@ public class Enemy : Entity
         //ClampMyself(true, true);
     }
 
-    public void WaitForNextAction()
+    public void WaitForNextAction(float waitTime)
     {
-        EnemiesManager.Instance.ImWaitingForNextAction(this);
+        EnemiesManager.Instance.ImWaitingForNextAction(this, waitTime);
     }
 
     public float lastTimeStriked = 0f;
@@ -520,7 +529,7 @@ public class Enemy : Entity
         if (stats.life > 0)
         {
             // No muero
-            WaitForNextAction();
+            WaitForNextAction(UnityEngine.Random.Range(0.8f, 1.5f) / stats.velocity);
             PlayAnim("Hit");
         }
         else
@@ -528,5 +537,4 @@ public class Enemy : Entity
             Burst(hitDir);
         }
     }
-
 }

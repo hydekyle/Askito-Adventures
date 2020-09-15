@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System.Runtime.CompilerServices;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using System.Linq;
@@ -7,6 +8,8 @@ using System;
 public class EnemiesManager : MonoBehaviour
 {
     public static EnemiesManager Instance;
+
+    public IEnumerator[] rutinas;
 
     GameManager GM;
     Player player;
@@ -47,13 +50,23 @@ public class EnemiesManager : MonoBehaviour
                     else SetEnemyRoutine(enemy, AproachToWorldPoint(enemy, CameraController.Instance.GetRandomValidPosition()));
                 }
             }
-            yield return new WaitForSeconds(UnityEngine.Random.Range(0.2f, 0.33f)); //Tiempo para ir dando nuevas acciones
+            yield return new WaitForSeconds(UnityEngine.Random.Range(0.1f, 0.33f)); //Tiempo para ir dando nuevas acciones
         }
     }
 
-    public void ImWaitingForNextAction(Enemy enemy)
+    public void StopAllEnemies()
     {
-        if (enemy.status == Status.Alive && !waitingForAction.Contains(enemy)) waitingForAction.Add(enemy);
+        waitingForAction = new List<Enemy>();
+        foreach (var enemy in GameManager.Instance.enemies) enemy.Idle();
+        foreach (var rutina in rutinas) StopCoroutine(rutina);
+    }
+
+    public void ImWaitingForNextAction(Enemy enemy, float waitTime)
+    {
+        if (enemy.status == Status.Alive && !waitingForAction.Contains(enemy))
+        {
+            StartCoroutine(Waiter(waitTime, () => { waitingForAction.Add(enemy); }));
+        }
     }
 
     private void SetEnemyRoutine(Enemy enemy, IEnumerator rutina)
@@ -82,38 +95,67 @@ public class EnemiesManager : MonoBehaviour
         }
     }
 
-    public IEnumerator[] rutinas;
-
     IEnumerator AproachToWorldPoint(Enemy enemy, Vector3 targetPosition)
     {
         float distanceToPlayer;
         float distanceToTarget;
+        float nextTime = Time.time + 1.2f;
+        float lastDistanceToTarget = 999f;
+
         do
         {
             Vector2 dir = (targetPosition - enemy.transform.position).normalized;
             distanceToPlayer = Vector2.Distance(enemy.transform.position, player.transform.position);
             distanceToTarget = Vector2.Distance(enemy.transform.position, targetPosition);
             enemy.MoveToDirection(dir);
+
+            if (nextTime < Time.time)
+            {
+                if (lastDistanceToTarget - distanceToTarget < 1)
+                {
+                    //Llevo un tiempo atascado
+                    print("atascao");
+                    break;
+                }
+                lastDistanceToTarget = distanceToTarget;
+                nextTime = Time.time + 1.2f;
+            }
+
             yield return new WaitForFixedUpdate();
         }
         while (distanceToTarget > 2f && distanceToPlayer > 2.5f);
         enemy.Idle();
-        ImWaitingForNextAction(enemy);
+        ImWaitingForNextAction(enemy, UnityEngine.Random.Range(0.1f, 0.3f));
     }
 
     IEnumerator ApproachToPlayerAndAttack(Enemy enemy, Transform target)
     {
         float distanceToPlayer;
         int initialLife = enemy.stats.life;
+        float nextTime = Time.time + 1.5f;
+        float lastDistanceToTarget = 999f;
 
         do
         {
             Vector2 dir = (target.position - enemy.transform.position).normalized;
             distanceToPlayer = Vector2.Distance(target.position, enemy.transform.position);
             enemy.MoveToDirection(dir);
+
+            if (nextTime < Time.time)
+            {
+                if (lastDistanceToTarget - distanceToPlayer < 1)
+                {
+                    //Llevo un tiempo atascado
+                    print("atascao");
+                    break;
+                }
+                lastDistanceToTarget = distanceToPlayer;
+                nextTime = Time.time + 1.5f;
+            }
+
             yield return new WaitForFixedUpdate();
         }
-        while (distanceToPlayer > 1.4f && enemy.status == Status.Alive);
+        while (distanceToPlayer > 1.5f && enemy.status == Status.Alive);
 
         enemy.Idle();
         yield return new WaitForSeconds(UnityEngine.Random.Range(0.1f, 0.22f));
@@ -124,7 +166,7 @@ public class EnemiesManager : MonoBehaviour
             enemy.PlayAnim("Attack");
             StartCoroutine(Waiter(UnityEngine.Random.Range(0.5f, 0.75f), () =>
             {
-                if (enemy.status == Status.Alive) ImWaitingForNextAction(enemy);
+                if (enemy.status == Status.Alive) ImWaitingForNextAction(enemy, UnityEngine.Random.Range(0.6f, 0.8f));
             }));
         }
     }

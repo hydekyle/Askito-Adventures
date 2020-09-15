@@ -1,5 +1,4 @@
-﻿using System.Runtime.CompilerServices;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Collections;
 using System.Linq;
@@ -7,6 +6,7 @@ using Doublsb.Dialog;
 using EZObjectPools;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.Events;
 //using XInputDotNetPure;
 
 public class GameManager : MonoBehaviour
@@ -16,10 +16,9 @@ public class GameManager : MonoBehaviour
     public bool isPacificLevel;
 
     public ScriptableWeapons tableWeapons;
+    public ScriptableItems tableItems;
 
     public DialogManager dialogManager;
-
-    //public Dictionary<int, Entity> enemiesRef = new Dictionary<int, Entity>();
     public Enemy[] enemies;
 
     public Player player;
@@ -39,8 +38,8 @@ public class GameManager : MonoBehaviour
     public Transform mapEnemies;
     public Transform mapBreakables;
 
-    public GameObject breakingBarrelPrefab, bombPrefab, bombEffectPrefab, shootPrefab, hitPrefab;
-    EZObjectPool barrelsPool, bulletsPool, bombsPool, hitsPool;
+    public GameObject barrelPrefab, breakingBarrelPrefab, bombPrefab, bombEffectPrefab, shootPrefab, hitPrefab;
+    public EZObjectPool breakingBarrelsPool, bulletsPool, bombsPool, hitsPool, barrelsPool;
 
     [HideInInspector]
     public EZObjectPool bombEffectPool;
@@ -54,7 +53,7 @@ public class GameManager : MonoBehaviour
     public int maxEnemies = 10;
     int enemyCounter = 0;
 
-    public float minY = -2f, maxY = 0.5f;
+    public float minY = -1.9f, maxY = 0f;
 
     Transform[] enemiesT;
 
@@ -82,6 +81,8 @@ public class GameManager : MonoBehaviour
             AllocateEnemies();
         }
         SpawnPlayer("Player");
+
+        SceneManager.sceneLoaded += OnSceneLoaded;
         //cullingManager = new CullingManager();
         //StartCoroutine(RutinaEnemigos());
     }
@@ -143,7 +144,8 @@ public class GameManager : MonoBehaviour
         bombsPool = EZObjectPool.CreateObjectPool(bombPrefab, "Bombs", 1, true, true, true);
         bombEffectPool = EZObjectPool.CreateObjectPool(bombEffectPrefab, "BombEffect", 1, true, true, true);
         hitsPool = EZObjectPool.CreateObjectPool(hitPrefab, "HitEffect", 6, true, true, true);
-        barrelsPool = EZObjectPool.CreateObjectPool(breakingBarrelPrefab, "Barrels", 3, true, true, true);
+        breakingBarrelsPool = EZObjectPool.CreateObjectPool(breakingBarrelPrefab, "BreakingBarrels", 2, true, true, true);
+        barrelsPool = EZObjectPool.CreateObjectPool(barrelPrefab, "Barrels", 6, true, true, true);
     }
 
     public void AllocateEnemies()
@@ -176,6 +178,13 @@ public class GameManager : MonoBehaviour
         dialogManager.Show(dialogData);
     }
 
+    public void ShowDialog(string[] texts)
+    {
+        List<DialogData> dialogList = new List<DialogData>();
+        foreach (var text in texts) dialogList.Add(new DialogData(text, "Askito"));
+        dialogManager.Show(dialogList);
+    }
+
     private void Update()
     {
         if (gameIsActive)
@@ -185,24 +194,14 @@ public class GameManager : MonoBehaviour
         }
         if (!isPacificLevel)
         {
-            if (player.transform.position.x > totalBattles * 15 && !battleIsActive && Time.time > timeLastBattleEnd + 3f) BattleStart();
+            CheckForBattleStart();
         }
     }
 
-    // IEnumerator<WaitForFixedUpdate> RutinaEnemigos()
-    // {
-    //     while (gameIsActive)
-    //     {
-    //         for (var x = 0; x < enemies.Length; x++)
-    //         {
-    //             if (enemies[x].status == Status.Alive)
-    //             {
-    //                 enemies[x].Update();
-    //             }
-    //             yield return new WaitForFixedUpdate();
-    //         }
-    //     }
-    // }
+    private void CheckForBattleStart()
+    {
+        if (player.transform.position.x > totalBattles * 30 && !battleIsActive && Time.time > timeLastBattleEnd + 3f) BattleStart();
+    }
 
     private int GetNextEnemyID()
     {
@@ -254,8 +253,18 @@ public class GameManager : MonoBehaviour
         foreach (Transform breakablesT in mapBreakables)
         {
             SpriteRenderer renderer = breakablesT.GetComponent<SpriteRenderer>();
-            renderer.sortingOrder = renderer.sortingOrder - (int)(breakablesT.position.y * 100);
+            SetSpriteOrder(renderer);
         }
+    }
+
+    public void SetSpriteOrder(SpriteRenderer renderer)
+    {
+        renderer.sortingOrder = renderer.sortingOrder - (int)(renderer.transform.position.y * 100);
+    }
+
+    public void SetSpriteOrder(SpriteRenderer renderer, int defaultSpriteOrder)
+    {
+        renderer.sortingOrder = defaultSpriteOrder - (int)(renderer.transform.position.y * 100);
     }
 
     private void SpawnPlayer(string playerName)
@@ -312,10 +321,10 @@ public class GameManager : MonoBehaviour
     public void BreakBreakable(Transform oldBreakable, Vector2 hitDir)
     {
         string breakableName = oldBreakable.name.Split(' ')[0];
-        if (breakableName.Equals("Barrel"))
+        if (breakableName.Contains("Barrel"))
         {
             int breakableSortingOrder = oldBreakable.GetComponent<SpriteRenderer>().sortingOrder;
-            if (barrelsPool.TryGetNextObject(oldBreakable.position, oldBreakable.rotation, out GameObject newBreaking))
+            if (breakingBarrelsPool.TryGetNextObject(oldBreakable.position, oldBreakable.rotation, out GameObject newBreaking))
             {
                 newBreaking.transform.position = oldBreakable.position;
                 oldBreakable.gameObject.SetActive(false);
@@ -523,28 +532,61 @@ public class GameManager : MonoBehaviour
         cullingManager?.Dispose();
     }
 
+    public bool gameIsOver = false;
+    float timeLastGameOver = 0f;
     public void GameOver()
     {
+        gameIsOver = true;
+        timeLastGameOver = Time.time;
         SoundManager.Instance.PlayGameOver();
         CanvasManager.Instance.ShowRetry();
+        EnemiesManager.Instance.StopAllEnemies();
     }
 
+    public bool isDialogActive = false;
     public void Interact()
     {
-        RaycastHit2D[] results = Physics2D.CircleCastAll(player.transform.position, 0.5f, player.transform.right, 1f, interactableMask);
-        if (results.Length > 0)
+        if (isDialogActive) dialogManager.Click_Window();
+        else
         {
-            results[0].transform.SendMessage("OnPlayerInteraction");
+            RaycastHit2D[] results = Physics2D.CircleCastAll(player.transform.position, 0.5f, player.transform.right, 1f, interactableMask);
+            if (results.Length > 0)
+            {
+                results[0].transform.SendMessage("OnPlayerInteraction");
+            }
         }
+    }
 
+    public void LoadNewScene(string sceneName)
+    {
+        player.isActive = false;
+        player.Idle();
+        StartCoroutine(CanvasManager.Instance.FadeIn(() =>
+        {
+            SceneManager.LoadScene(sceneName);
+        }));
+    }
+
+    void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+    {
+        Helpers.Waiter(1.0f, () =>
+        {
+            GameManager.Instance.StartCoroutine(CanvasManager.Instance.FadeOut());
+            player.isActive = true;
+        });
     }
 
     int wIndex = 0;
     public LayerMask interactableMask;
+
     private void Controls()
     {
         float xAxis = Input.GetAxis("Horizontal");
         float yAxis = Input.GetAxis("Vertical");
+
+        if (Input.GetButtonDown("Attack") && gameIsOver && Time.time > timeLastGameOver + CanvasManager.Instance.delayRetryButton) RestartScene();
+
+        if (Input.GetButtonDown("Attack") && isPacificLevel) Interact();
 
         if (player.isActive)
         {
@@ -556,11 +598,7 @@ public class GameManager : MonoBehaviour
             }
             else player.Idle();
 
-            if (Input.GetButtonDown("Attack"))
-            {
-                if (isPacificLevel) Interact();
-                else player.Attack(new Vector2(xAxis, yAxis));
-            }
+            if (Input.GetButtonDown("Attack") && !isPacificLevel) player.Attack(new Vector2(xAxis, yAxis));
             else if (Input.GetButtonDown("Fire2"))
             {
                 if (new Vector2(xAxis, yAxis).normalized == Vector2.zero)
@@ -571,16 +609,10 @@ public class GameManager : MonoBehaviour
                 {
                     player.Dash(new Vector2(xAxis, yAxis).normalized * 1.5f);
                 }
-
             }
             //else if (Input.GetButtonDown("Fire3")) player.ShootWeapon();
         }
 
-        // if (Input.GetButtonDown("Jump"))
-        // {
-        //     if (player.isActive) ShootBomb(player.transform);
-        //     else RestartScene();
-        // }
 
 #if UNITY_EDITOR
         if (Input.GetKeyDown(KeyCode.F1))

@@ -71,26 +71,6 @@ public class LightPuzzle : MonoBehaviour
         }
     }
 
-    ButtonPosition GetButtonPositionByIndex(int button_index)
-    {
-        ButtonPosition buttonPosition;
-        switch (button_index)
-        {
-            case 0: buttonPosition = ButtonPosition.TopLeft; break;
-            case 1: buttonPosition = ButtonPosition.TopMid; break;
-            case 2: buttonPosition = ButtonPosition.TopRight; break;
-
-            case 3: buttonPosition = ButtonPosition.MidLeft; break;
-            case 4: buttonPosition = ButtonPosition.MidMid; break;
-            case 5: buttonPosition = ButtonPosition.MidRight; break;
-
-            case 6: buttonPosition = ButtonPosition.BotLeft; break;
-            case 7: buttonPosition = ButtonPosition.BotMid; break;
-            default: buttonPosition = ButtonPosition.BotRight; break;
-        }
-        return buttonPosition;
-    }
-
     private void SwapButtonStatus(int button_index)
     {
         buttons[button_index].isOn = !buttons[button_index].isOn;
@@ -114,6 +94,26 @@ public class LightPuzzle : MonoBehaviour
         CanvasManager.Instance.LightPuzzleSetActive(false);
         SetRandomStatusButtons();
         print("¡Has ganado!");
+    }
+
+    ButtonPosition GetButtonPositionByIndex(int button_index)
+    {
+        ButtonPosition buttonPosition;
+        switch (button_index)
+        {
+            case 0: buttonPosition = ButtonPosition.TopLeft; break;
+            case 1: buttonPosition = ButtonPosition.TopMid; break;
+            case 2: buttonPosition = ButtonPosition.TopRight; break;
+
+            case 3: buttonPosition = ButtonPosition.MidLeft; break;
+            case 4: buttonPosition = ButtonPosition.MidMid; break;
+            case 5: buttonPosition = ButtonPosition.MidRight; break;
+
+            case 6: buttonPosition = ButtonPosition.BotLeft; break;
+            case 7: buttonPosition = ButtonPosition.BotMid; break;
+            default: buttonPosition = ButtonPosition.BotRight; break;
+        }
+        return buttonPosition;
     }
 
     public void OnButtonPressed(int button_index)

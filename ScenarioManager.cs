@@ -44,9 +44,30 @@ public class ScenarioManager : MonoBehaviour
         while (newPiecesCounter < newPieces)
         {
             index = index + 1 >= maps.Length ? 0 : index + 1;
+            CleanBreakables(maps[index]);
             maps[index].transform.position = new Vector3(distanceMap * ++workCounter, 0, 0);
+            AddBreakablesRandom(maps[index]);
             newPiecesCounter++;
         }
+    }
 
+    void AddBreakablesRandom(Transform mapPiece)
+    {
+        int barrelsNumber = Random.Range(1, 3);
+        for (var x = 0; x < barrelsNumber; x++)
+        {
+            if (GameManager.Instance.barrelsPool.TryGetNextObject(mapPiece.transform.localPosition, Quaternion.identity, out GameObject newBarrel))
+            {
+                newBarrel.transform.parent = mapPiece;
+                newBarrel.transform.position = mapPiece.position + new Vector3(Random.Range(-9f, 9f), Random.Range(0f, -2f), 0);
+                GameManager.Instance.SetSpriteOrder(newBarrel.GetComponent<SpriteRenderer>(), 15);
+                newBarrel.SetActive(true);
+            }
+        }
+    }
+
+    void CleanBreakables(Transform mapPiece)
+    {
+        foreach (Transform t in mapPiece) t.gameObject.SetActive(false);
     }
 }
