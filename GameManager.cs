@@ -200,7 +200,7 @@ public class GameManager : MonoBehaviour
 
     private void CheckForBattleStart()
     {
-        if (player.transform.position.x > totalBattles * 30 && !battleIsActive && Time.time > timeLastBattleEnd + 3f) BattleStart();
+        if (player.transform.position.x > totalBattles * 5 && !battleIsActive && Time.time > timeLastBattleEnd + 3f) BattleStart();
     }
 
     private int GetNextEnemyID()

@@ -275,17 +275,17 @@ public abstract class Entity
         if (limb == BodyLimb.Head)
         {
             GameObject newGO = GameObject.Instantiate(oldLimb.gameObject);
+            GameObject.Destroy(newGO, 2.5f);
             Transform newLimb = newGO.transform;
+
+            newLimb.Find("Eyes").GetComponent<SpriteRenderer>().sprite = EquipManager.Instance.deadEyes;
+            newLimb.Find("Mouth").GetComponent<SpriteRenderer>().sprite = EquipManager.Instance.deadMouth;
 
             newLimb.position = oldLimb.position;
             newLimb.localScale = oldLimb.lossyScale;
             newLimb.rotation = oldLimb.rotation;
-            Rigidbody2D rb = newLimb.gameObject.AddComponent<Rigidbody2D>();
-            newGO.SetActive(true);
-            GameObject.Destroy(newLimb.gameObject, 2.5f);
 
-            rb.gravityScale = 10f;
-            rb.AddForce(Vector2.up * 10 + hitDir * 5, ForceMode2D.Impulse);
+
 
             // Poner la cabeza y sus elementos siempre visible
             SpriteRenderer parentRenderer = newLimb.GetComponent<SpriteRenderer>();
@@ -298,6 +298,11 @@ public abstract class Entity
                     renderer.sortingOrder = renderer.sortingOrder + 9999;
                 }
             }
+
+            newGO.SetActive(true);
+            Rigidbody2D rb = newLimb.gameObject.AddComponent<Rigidbody2D>();
+            rb.gravityScale = 10f;
+            rb.AddForce(Vector2.up * 10 + hitDir * 5, ForceMode2D.Impulse);
         }
         else
         {

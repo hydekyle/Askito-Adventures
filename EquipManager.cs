@@ -9,6 +9,8 @@ public class EquipManager : MonoBehaviour
 
     public List<string> skinNames;
     public Dictionary<string, List<Sprite>> dicSkins;
+    public List<Sprite> hairList, mouthList, eyebrownList, earsList, eyeList;
+    public Sprite deadMouth, deadEyes;
 
     private void OnValidate()
     {
@@ -20,22 +22,49 @@ public class EquipManager : MonoBehaviour
         if (Instance != null) Destroy(this.gameObject);
         Instance = this;
 #if !UNITY_EDITOR
-        ReadAllResources();
+        // Cargar mapa después de esto
+        OnValidate();
 #endif
+        deadMouth = mouthList.Find(mouth => mouth.name == "Crying");
+        deadEyes = eyeList.Find(eye => eye.name == "Crying");
     }
 
     public void ReadAllResources()
     {
+        hairList = new List<Sprite>();
+        mouthList = new List<Sprite>();
+        eyebrownList = new List<Sprite>();
+        earsList = new List<Sprite>();
+        eyeList = new List<Sprite>();
+
         skinNames = new List<string>();
         dicSkins = new Dictionary<string, List<Sprite>>();
-        var assets = Resources.LoadAll("Skins", typeof(Texture2D));
 
-        for (var x = 0; x < assets.Length; x++) skinNames.Add(assets[x].name); // Lee los conjuntos
+        var mouths = Resources.LoadAll("Sprites/BodyParts/Mouth", typeof(Sprite));
+        var hairs = Resources.LoadAll("Sprites/BodyParts/Hair", typeof(Sprite));
+        var eyebrowns = Resources.LoadAll("Sprites/BodyParts/Eyebrows", typeof(Sprite));
+        var ears = Resources.LoadAll("Sprites/BodyParts/Ears", typeof(Sprite));
+        var eyes = Resources.LoadAll("Sprites/BodyParts/Eyes", typeof(Sprite));
 
+        foreach (var sprite in hairs) hairList.Add((Sprite)sprite);
+        foreach (var sprite in mouths) mouthList.Add((Sprite)sprite);
+        foreach (var sprite in eyebrowns) eyebrownList.Add((Sprite)sprite);
+        foreach (var sprite in ears) earsList.Add((Sprite)sprite);
+        foreach (var sprite in eyes) eyeList.Add((Sprite)sprite);
+
+        // Leer sprite multiples
+        var skins = Resources.LoadAll("Sprites/Skins", typeof(Texture2D));
+
+        // Lee los conjuntos
+        for (var x = 0; x < skins.Length; x++) skinNames.Add(skins[x].name);
+
+        Debug.LogFormat("Mouths: {0} | Pingas: {1} | Skins: {2} | Names: {3}", mouths.Length, hairs.Length, skins.Length, skinNames.Count);
+
+        // Convertir skin multiple
         foreach (var skinName in skinNames)
         {
             List<Sprite> newList = new List<Sprite>();
-            var skinSprites = Resources.LoadAll("Skins/" + skinName, typeof(Sprite));
+            var skinSprites = Resources.LoadAll("Sprites/Skins/" + skinName, typeof(Sprite));
             foreach (var spriteObj in skinSprites) newList.Add((Sprite)spriteObj);
             dicSkins[skinName] = newList;
         }
@@ -43,22 +72,31 @@ public class EquipManager : MonoBehaviour
 
     public void SetRandomEquipment(Character character)
     {
-
-        List<Sprite> spriteList = GetRandomSkin();
+        List<Sprite> skinSpriteList = GetRandomSkin();
         float colorValue = Random.Range(100f, 255f);
         Color skinColor = new Color(colorValue, colorValue, colorValue, 255f);
         SetSkinColor(character, skinColor);
-        character.ArmorArmL = spriteList[0];
-        character.ArmorArmR = spriteList[1];
-        character.ArmorForearmL = spriteList[2];
-        character.ArmorForearmR = spriteList[3];
-        character.ArmorHandL = spriteList[4];
-        character.ArmorHandR = spriteList[5];
-        character.ArmorLeg = spriteList[6];
-        character.ArmorPelvis = spriteList[7];
-        character.ArmorShin = spriteList[8];
-        character.ArmorTorso = spriteList[9];
+        character.ArmorArmL = skinSpriteList[0];
+        character.ArmorArmR = skinSpriteList[1];
+        character.ArmorForearmL = skinSpriteList[2];
+        character.ArmorForearmR = skinSpriteList[3];
+        character.ArmorHandL = skinSpriteList[4];
+        character.ArmorHandR = skinSpriteList[5];
+        character.ArmorLeg = skinSpriteList[6];
+        character.ArmorPelvis = skinSpriteList[7];
+        character.ArmorShin = skinSpriteList[8];
+        character.ArmorTorso = skinSpriteList[9];
+        character.Mouth = GetOneRandom(mouthList);
+        character.Hair = GetOneRandom(hairList);
+        character.Eyebrows = GetOneRandom(eyebrownList);
+        character.Ears = earsList.Find(ears => ears.name == "HumanEar");
+        character.EarsRenderer.color = skinColor;
         character.Initialize();
+    }
+
+    private Sprite GetOneRandom(List<Sprite> spriteList)
+    {
+        return spriteList[Random.Range(0, spriteList.Count)];
     }
 
     public void SetSkinColor(Character character, Color color)
@@ -79,7 +117,7 @@ public class EquipManager : MonoBehaviour
 
     List<Sprite> GetRandomSkin()
     {
-        return dicSkins[skinNames[UnityEngine.Random.Range(0, skinNames.Count)]];
+        return dicSkins[skinNames[Random.Range(0, skinNames.Count)]];
     }
 
 }
