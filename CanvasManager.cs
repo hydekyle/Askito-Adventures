@@ -33,6 +33,7 @@ public class CanvasManager : MonoBehaviour
     {
         retryButton = retryGO.GetComponent<Button>();
         SetPreviousConfig();
+        if (!Application.isMobilePlatform) androidControls.SetActive(false);
     }
 
     public float fadeSpeed = 1.5f;
@@ -70,6 +71,7 @@ public class CanvasManager : MonoBehaviour
 
     public IEnumerator FadeOut()
     {
+        fadeImage.color = new Color(0, 0, 0, 1);
         float startedTime = Time.time;
         while (fadeImage.color.a > 0f)
         {

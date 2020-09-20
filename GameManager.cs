@@ -198,9 +198,10 @@ public class GameManager : MonoBehaviour
         }
     }
 
+    public int distanceForBattle = 20;
     private void CheckForBattleStart()
     {
-        if (player.transform.position.x > totalBattles * 5 && !battleIsActive && Time.time > timeLastBattleEnd + 3f) BattleStart();
+        if (player.transform.position.x > totalBattles * distanceForBattle && !battleIsActive && Time.time > timeLastBattleEnd + 3f) BattleStart();
     }
 
     private int GetNextEnemyID()
@@ -210,7 +211,7 @@ public class GameManager : MonoBehaviour
 
     public void SpawnEnemy(int enemyNumber)
     {
-        bool spawnOnLeft = UnityEngine.Random.Range(0, 4) % 2 == 0 ? true : false;
+        bool spawnOnLeft = false;
         if (spawnOnLeft) enemyNumber++;
         var mainCamera = Camera.main;
         var finalPos = new Vector3(
@@ -241,6 +242,21 @@ public class GameManager : MonoBehaviour
         cullingManager?.SetSphere(enemy.ID, finalPos);
     }
 
+    private void SpawnPlayer(string playerName)
+    {
+        playerTransform = Instantiate(playerGO, Vector3.zero, transform.rotation).transform;
+
+        Player newPlayer = new Player(
+            playerTransform,
+            new Stats() { life = 20, strength = 1, velocity = 2 },
+            tableWeapons.common[0],
+            playerName
+        );
+        player = newPlayer;
+        playerTransform.name = playerName;
+        gameIsActive = true;
+    }
+
     public void DeleteEnemy(int enemyID)
     {
         cullingManager?.RemoveSphere(enemyID);
@@ -265,21 +281,6 @@ public class GameManager : MonoBehaviour
     public void SetSpriteOrder(SpriteRenderer renderer, int defaultSpriteOrder)
     {
         renderer.sortingOrder = defaultSpriteOrder - (int)(renderer.transform.position.y * 100);
-    }
-
-    private void SpawnPlayer(string playerName)
-    {
-        playerTransform = Instantiate(playerGO, Vector3.zero, transform.rotation).transform;
-
-        Player newPlayer = new Player(
-            playerTransform,
-            new Stats() { life = 6, strength = 1, velocity = 2 },
-            tableWeapons.common[0],
-            playerName
-        );
-        player = newPlayer;
-        playerTransform.name = playerName;
-        gameIsActive = true;
     }
 
     private void SetCheatStats()
@@ -569,11 +570,8 @@ public class GameManager : MonoBehaviour
 
     void OnSceneLoaded(Scene scene, LoadSceneMode mode)
     {
-        Helpers.Waiter(1.0f, () =>
-        {
-            GameManager.Instance.StartCoroutine(CanvasManager.Instance.FadeOut());
-            player.isActive = true;
-        });
+        GameManager.Instance.StartCoroutine(CanvasManager.Instance.FadeOut());
+        player.isActive = true;
     }
 
     int wIndex = 0;
@@ -612,17 +610,5 @@ public class GameManager : MonoBehaviour
             }
             //else if (Input.GetButtonDown("Fire3")) player.ShootWeapon();
         }
-
-
-#if UNITY_EDITOR
-        if (Input.GetKeyDown(KeyCode.F1))
-        {
-            if (wIndex + 1 < tableWeapons.common.Count) wIndex++;
-            else wIndex = 0;
-            EquipPlayerWeapon(tableWeapons.common[wIndex]);
-        }
-        //if (Input.GetButtonDown("Jump")) SpawnEnemyRandom();
-        if (Input.GetKeyDown(KeyCode.F12)) RestartScene();
-#endif
     }
 }

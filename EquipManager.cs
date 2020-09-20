@@ -10,6 +10,7 @@ public class EquipManager : MonoBehaviour
     public List<string> skinNames;
     public Dictionary<string, List<Sprite>> dicSkins;
     public List<Sprite> hairList, mouthList, eyebrownList, earsList, eyeList;
+    [HideInInspector]
     public Sprite deadMouth, deadEyes;
 
     private void OnValidate()
@@ -26,7 +27,7 @@ public class EquipManager : MonoBehaviour
         OnValidate();
 #endif
         deadMouth = mouthList.Find(mouth => mouth.name == "Crying");
-        deadEyes = eyeList.Find(eye => eye.name == "Crying");
+        deadEyes = eyeList.Find(eye => eye.name == "Dead");
     }
 
     public void ReadAllResources()
@@ -44,7 +45,7 @@ public class EquipManager : MonoBehaviour
         var hairs = Resources.LoadAll("Sprites/BodyParts/Hair", typeof(Sprite));
         var eyebrowns = Resources.LoadAll("Sprites/BodyParts/Eyebrows", typeof(Sprite));
         var ears = Resources.LoadAll("Sprites/BodyParts/Ears", typeof(Sprite));
-        var eyes = Resources.LoadAll("Sprites/BodyParts/Eyes", typeof(Sprite));
+        var eyes = Resources.LoadAll("Sprites/BodyParts/Eyes/Basic", typeof(Sprite));
 
         foreach (var sprite in hairs) hairList.Add((Sprite)sprite);
         foreach (var sprite in mouths) mouthList.Add((Sprite)sprite);
@@ -57,8 +58,6 @@ public class EquipManager : MonoBehaviour
 
         // Lee los conjuntos
         for (var x = 0; x < skins.Length; x++) skinNames.Add(skins[x].name);
-
-        Debug.LogFormat("Mouths: {0} | Pingas: {1} | Skins: {2} | Names: {3}", mouths.Length, hairs.Length, skins.Length, skinNames.Count);
 
         // Convertir skin multiple
         foreach (var skinName in skinNames)
@@ -91,12 +90,18 @@ public class EquipManager : MonoBehaviour
         character.Eyebrows = GetOneRandom(eyebrownList);
         character.Ears = earsList.Find(ears => ears.name == "HumanEar");
         character.EarsRenderer.color = skinColor;
+        character.Eyes = GetOneRandom(eyeList, 1);
         character.Initialize();
     }
 
     private Sprite GetOneRandom(List<Sprite> spriteList)
     {
         return spriteList[Random.Range(0, spriteList.Count)];
+    }
+
+    private Sprite GetOneRandom(List<Sprite> spriteList, int startIndex)
+    {
+        return spriteList[Random.Range(startIndex, spriteList.Count)];
     }
 
     public void SetSkinColor(Character character, Color color)

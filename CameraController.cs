@@ -12,7 +12,7 @@ public class CameraController : MonoBehaviour
     public Material backgroundMaterial;
     public Material backgroundFarMaterial;
     public float velocity = 1.3f;
-    public float backDistanceMax = 20f;
+    public float backDistanceMax = 10f;
 
     public float maxDistanceLeft;
     public float maxDistanceRight;
