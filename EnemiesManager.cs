@@ -114,16 +114,19 @@ public class EnemiesManager : MonoBehaviour
                 if (lastDistanceToTarget - distanceToTarget < 1)
                 {
                     //Llevo un tiempo atascado
-                    print("atascao");
                     break;
                 }
                 lastDistanceToTarget = distanceToTarget;
                 nextTime = Time.time + 1.2f;
             }
-
             yield return new WaitForFixedUpdate();
         }
         while (distanceToTarget > 2f && distanceToPlayer > 2.5f);
+        if (UnityEngine.Random.Range(0, 10) < 3)
+        {
+            enemy.MoveToDirection(-enemy.transform.right);
+            yield return new WaitForSeconds(UnityEngine.Random.Range(0.15f, 0.25f));
+        }
         enemy.Idle();
         ImWaitingForNextAction(enemy, UnityEngine.Random.Range(0.1f, 0.3f));
     }
@@ -132,7 +135,8 @@ public class EnemiesManager : MonoBehaviour
     {
         float distanceToPlayer;
         int initialLife = enemy.stats.life;
-        float nextTime = Time.time + 1.5f;
+        float delayCheck = UnityEngine.Random.Range(0.55f, 1.55f);
+        float nextTimeCheckDistance = Time.time + delayCheck;
         float lastDistanceToTarget = 999f;
 
         do
@@ -141,16 +145,15 @@ public class EnemiesManager : MonoBehaviour
             distanceToPlayer = Vector2.Distance(target.position, enemy.transform.position);
             enemy.MoveToDirection(dir);
 
-            if (nextTime < Time.time)
+            if (nextTimeCheckDistance < Time.time)
             {
                 if (lastDistanceToTarget - distanceToPlayer < 1)
                 {
-                    //Llevo un tiempo atascado
-                    print("atascao");
+                    //Llevo un tiempo atascado 
                     break;
                 }
                 lastDistanceToTarget = distanceToPlayer;
-                nextTime = Time.time + 1.5f;
+                nextTimeCheckDistance = Time.time + delayCheck;
             }
 
             yield return new WaitForFixedUpdate();
@@ -158,7 +161,7 @@ public class EnemiesManager : MonoBehaviour
         while (distanceToPlayer > 1.5f && enemy.status == Status.Alive);
 
         enemy.Idle();
-        yield return new WaitForSeconds(UnityEngine.Random.Range(0.1f, 0.22f));
+        yield return new WaitForSeconds(UnityEngine.Random.Range(0.066f, 0.122f));
 
         if (initialLife == enemy.stats.life && player.isActive)
         {

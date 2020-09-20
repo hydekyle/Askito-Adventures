@@ -211,7 +211,7 @@ public class GameManager : MonoBehaviour
 
     public void SpawnEnemy(int enemyNumber)
     {
-        bool spawnOnLeft = false;
+        bool spawnOnLeft = UnityEngine.Random.Range(0, 20) < 1 ? true : false;
         if (spawnOnLeft) enemyNumber++;
         var mainCamera = Camera.main;
         var finalPos = new Vector3(
@@ -244,7 +244,7 @@ public class GameManager : MonoBehaviour
 
     private void SpawnPlayer(string playerName)
     {
-        playerTransform = Instantiate(playerGO, Vector3.zero, transform.rotation).transform;
+        playerTransform = Instantiate(playerGO, new Vector3(1.13f, -0.47f, 0), transform.rotation).transform;
 
         Player newPlayer = new Player(
             playerTransform,

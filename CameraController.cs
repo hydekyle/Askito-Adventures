@@ -93,7 +93,7 @@ public class CameraController : MonoBehaviour
         if (isPacificMap) return Mathf.Clamp(targetX, minCameraLimitX, maxCameraLimitX);
         return battleMode ?
                     Mathf.Clamp(targetX + extraX, minCameraLimitX, maxCameraLimitX) :
-                    Mathf.Clamp(targetX + extraX, minPosX - backDistanceMax, Mathf.Infinity);
+                    Mathf.Clamp(targetX + extraX, Mathf.Clamp(minPosX - backDistanceMax, 5, Mathf.Infinity), Mathf.Infinity);
     }
 
     private void FollowTarget()
