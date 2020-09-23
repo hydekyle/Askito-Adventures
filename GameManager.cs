@@ -61,7 +61,7 @@ public class GameManager : MonoBehaviour
 
     Db db;
 
-    Stats basicEnemyStats = new Stats() { life = 6, strength = 1, velocity = 1 };
+    Stats basicEnemyStats = new Stats() { life = 60, strength = 10, velocity = 1 };
 
     private void Awake()
     {
@@ -248,7 +248,7 @@ public class GameManager : MonoBehaviour
 
         Player newPlayer = new Player(
             playerTransform,
-            new Stats() { life = 20, strength = 1, velocity = 2 },
+            new Stats() { life = 100, strength = 50, velocity = 2 },
             tableWeapons.common[0],
             playerName
         );

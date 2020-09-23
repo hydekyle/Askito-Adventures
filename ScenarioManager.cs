@@ -34,7 +34,7 @@ public class ScenarioManager : MonoBehaviour
 
     private void CheckForExpanseMap()
     {
-        if (playerT.position.x > distanceMap * workCounter) ExpanseMap(2);
+        if (playerT.position.x + 5 > distanceMap * workCounter) ExpanseMap(2);
     }
 
     void ExpanseMap(int newPieces)
@@ -53,13 +53,13 @@ public class ScenarioManager : MonoBehaviour
 
     void AddRandomStuff(Transform mapPiece)
     {
-        int barrelsNumber = Random.Range(1, 3);
+        int barrelsNumber = Random.Range(1, 4);
         for (var x = 0; x < barrelsNumber; x++)
         {
             if (GameManager.Instance.barrelsPool.TryGetNextObject(mapPiece.transform.localPosition, Quaternion.identity, out GameObject newBarrel))
             {
                 newBarrel.transform.parent = mapPiece.Find("Breakables");
-                newBarrel.transform.position = mapPiece.position + new Vector3(Random.Range(-9f, 9f), Random.Range(0f, -2f), 0);
+                newBarrel.transform.position = mapPiece.position + new Vector3(Random.Range(-9f, 9f), Random.Range(0f, -2f), 0) + Vector3.right * barrelsNumber;
                 GameManager.Instance.SetSpriteOrder(newBarrel.GetComponent<SpriteRenderer>(), 15);
                 newBarrel.SetActive(true);
             }

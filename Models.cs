@@ -470,6 +470,7 @@ public class Player : Entity
         if (lastTimeDash + inmuneTimeAfterDash > Time.time) return;
 
         stats.life -= strikeForce;
+        CanvasManager.Instance.HealthbarTakeDamage(stats.life);
         SoundManager.Instance.PlayHitPlayer();
         if (stats.life > 0)
         {
@@ -529,7 +530,7 @@ public class Enemy : Entity
         SoundManager.Instance.PlayHitSlash();
         lastTimeStriked = Time.time;
         EnemiesManager.Instance.StopEnemyRoutine(this.ID);
-        rigidbody.AddForce(hitDir.normalized * strikeForce, ForceMode2D.Impulse);
+        rigidbody.AddForce(hitDir.normalized * strikeForce / 6.66f, ForceMode2D.Impulse);
         stats.life -= strikeForce;
         if (stats.life > 0)
         {
@@ -539,6 +540,7 @@ public class Enemy : Entity
         }
         else
         {
+            ScoreUI.Instance.AddScore(1);
             Burst(hitDir);
         }
     }

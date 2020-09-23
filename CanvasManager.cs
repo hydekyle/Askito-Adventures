@@ -17,6 +17,7 @@ public class CanvasManager : MonoBehaviour
     public GameObject retryGO;
     Button retryButton;
     public GameObject ligthPuzzleGO;
+    public Healthbar healthbar;
 
     public Image avatarTweeter;
 
@@ -34,6 +35,11 @@ public class CanvasManager : MonoBehaviour
         retryButton = retryGO.GetComponent<Button>();
         SetPreviousConfig();
         if (!Application.isMobilePlatform) androidControls.SetActive(false);
+    }
+
+    public void HealthbarTakeDamage(int value)
+    {
+        healthbar.SetHealth(value);
     }
 
     public float fadeSpeed = 1.5f;
