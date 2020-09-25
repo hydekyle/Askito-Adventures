@@ -373,7 +373,7 @@ public class GameManager : MonoBehaviour
         entity.legLeftT.gameObject.SetActive(true);
         entity.transform.gameObject.SetActive(false);
 
-        entity.transform.gameObject.layer = LayerMask.NameToLayer("Enemy");
+        entity.transform.gameObject.layer = LayerMask.NameToLayer("Ghost");
         DeleteEnemy(entity.ID);
     }
 

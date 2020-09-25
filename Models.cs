@@ -137,12 +137,11 @@ public abstract class Entity
             lastTimeAttackCombo = lastTimeAttack = Time.time;
             SlashAttack(attackDir, 0.2f);
             PlayAnim(comboCounter % 2 == 0 ? "Attack" : "AttackCombo");
-            SoundManager.Instance.PlayComboSuccess();
         }
         else if (comboCounter > 0)
         {
             // Si vuelves a atacar sin haber golpeado (El Spam no mola)
-            if (isPlayer) SoundManager.Instance.PlayComboFailure();
+            //if (isPlayer) SoundManager.Instance.PlayComboFailure();
             comboCounter = 0;
             extraAction = false;
         }
