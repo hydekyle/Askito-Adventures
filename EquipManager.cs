@@ -2,6 +2,7 @@
 using Assets.FantasyHeroes.Scripts;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class EquipManager : MonoBehaviour
 {
@@ -32,6 +33,8 @@ public class EquipManager : MonoBehaviour
 
     public void ReadAllResources()
     {
+        string skinsRoute = "Sprites/Skins/" + SceneManager.GetActiveScene().name + "/";
+
         hairList = new List<Sprite>();
         mouthList = new List<Sprite>();
         eyebrownList = new List<Sprite>();
@@ -54,7 +57,7 @@ public class EquipManager : MonoBehaviour
         foreach (var sprite in eyes) eyeList.Add((Sprite)sprite);
 
         // Leer sprite multiples
-        var skins = Resources.LoadAll("Sprites/Skins", typeof(Texture2D));
+        var skins = Resources.LoadAll(skinsRoute, typeof(Texture2D));
 
         // Lee los conjuntos
         for (var x = 0; x < skins.Length; x++) skinNames.Add(skins[x].name);
@@ -63,7 +66,7 @@ public class EquipManager : MonoBehaviour
         foreach (var skinName in skinNames)
         {
             List<Sprite> newList = new List<Sprite>();
-            var skinSprites = Resources.LoadAll("Sprites/Skins/" + skinName, typeof(Sprite));
+            var skinSprites = Resources.LoadAll(skinsRoute + skinName, typeof(Sprite));
             foreach (var spriteObj in skinSprites) newList.Add((Sprite)spriteObj);
             dicSkins[skinName] = newList;
         }

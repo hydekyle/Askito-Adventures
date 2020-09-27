@@ -59,7 +59,7 @@ public class GameManager : MonoBehaviour
 
     CullingManager cullingManager;
 
-    Db db;
+    public Db db;
 
     Stats basicEnemyStats = new Stats() { life = 60, strength = 10, velocity = 1 };
 
@@ -73,7 +73,7 @@ public class GameManager : MonoBehaviour
     private void Initialize()
     {
         //admob = new AdmobManager();
-        //db = new Db();
+        db = new Db();
         if (!isPacificLevel)
         {
             GeneratePools();
@@ -582,7 +582,7 @@ public class GameManager : MonoBehaviour
         float xAxis = Input.GetAxis("Horizontal");
         float yAxis = Input.GetAxis("Vertical");
 
-        if (Input.GetButtonDown("Attack") && gameIsOver && Time.time > timeLastGameOver + CanvasManager.Instance.delayRetryButton) RestartScene();
+        //if (Input.GetButtonDown("Attack") && gameIsOver && Time.time > timeLastGameOver + CanvasManager.Instance.delayRetryButton) RestartScene();
 
         if (Input.GetButtonDown("Attack") && isPacificLevel) Interact();
 

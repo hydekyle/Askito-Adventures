@@ -34,4 +34,9 @@ public class ScoreUI : MonoBehaviour
         scoreText.color = finalColor;
     }
 
+    public int GetScore()
+    {
+        return score;
+    }
+
 }

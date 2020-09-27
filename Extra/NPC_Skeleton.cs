@@ -5,6 +5,13 @@ using UnityEngine;
 public class NPC_Skeleton : MonoBehaviour
 {
     int interactions = 0;
+    int playerSouls;
+
+    private void Start()
+    {
+        playerSouls = GameManager.Instance.db.GetSouls();
+    }
+
     public void OnPlayerInteraction()
     {
         Talk();
@@ -12,9 +19,14 @@ public class NPC_Skeleton : MonoBehaviour
 
     private void Talk()
     {
+        if (playerSouls == 0)
+        {
+            Dialog("...");
+            return;
+        }
         switch (interactions)
         {
-            case 0: Dialog("¡Hola, churrita!", "Yo antes era pambisito, pero ahora he acabado aquí, solo y sin amigos."); break;
+            case 0: Dialog("¡Hola, churrita!", "Esas pambialmas que llevas contigo huelen muy bien."); break;
             case 1: Dialog("Antaño los pambis me daban de comer, pero se aburrieron de mí y ahora estoy literalmente en los huesos, amigo."); break;
             default: Dialog("Yo ya no tengo fuerzas, pero ahí fuera está plagado de pambis sedientos de sangre.", "Askito, eres el único que puede parar esta pandemia.", "Sal ahí fuera y farmea almas de pambis. Tráelas y podremos abrir esta puerta misteriosa. ¿Te parece?"); break;
         }

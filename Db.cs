@@ -28,19 +28,19 @@ public class Db
 {
     string server_adress = "localhost:8080/hyde";
 
-    public Db()
-    {
-        GameManager.Instance.StartCoroutine(GetTweetData(server_adress, (tweetData, textureAvatar) =>
-        {
-            Debug.LogFormat("Incoming User {0}", tweetData.accountName);
-            CanvasManager.Instance.avatarTweeter.sprite = Sprite.Create
-            (
-                textureAvatar,
-                 new Rect(0f, 0f, textureAvatar.width, textureAvatar.height),
-                 Vector2.zero
-            );
-        }));
-    }
+    // public Db()
+    // {
+    //     GameManager.Instance.StartCoroutine(GetTweetData(server_adress, (tweetData, textureAvatar) =>
+    //     {
+    //         Debug.LogFormat("Incoming User {0}", tweetData.accountName);
+    //         CanvasManager.Instance.avatarTweeter.sprite = Sprite.Create
+    //         (
+    //             textureAvatar,
+    //              new Rect(0f, 0f, textureAvatar.width, textureAvatar.height),
+    //              Vector2.zero
+    //         );
+    //     }));
+    // }
 
     IEnumerator GetTweetData(string uri, Action<TweetData, Texture2D> tweetData)
     {
@@ -77,6 +77,22 @@ public class Db
                 Debug.LogWarning("No me puedo conectar al servidor: " + request.error);
             }
         }
+    }
+
+    public int GetSouls()
+    {
+        return PlayerPrefs.GetInt("Souls", 0);
+    }
+
+    private void SetSouls(int value)
+    {
+        PlayerPrefs.SetInt("Souls", value);
+    }
+
+    public void AddSouls(int value)
+    {
+        int total = PlayerPrefs.GetInt("Souls", 0) + value;
+        SetSouls(total);
     }
 
 }

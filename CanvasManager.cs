@@ -161,9 +161,10 @@ public class CanvasManager : MonoBehaviour
         retryButton.interactable = true;
     }
 
-    public void Retry()
+    public void BackToHouse()
     {
-        StartCoroutine(FadeIn(() => { GameManager.Instance.RestartScene(); }));
+        GameManager.Instance.db.AddSouls(ScoreUI.Instance.GetScore());
+        GameManager.Instance.LoadNewScene("House");
     }
 
     public void LightPuzzleSetActive(bool active)
