@@ -41,8 +41,6 @@ public class CameraController : MonoBehaviour
         playerT = GameManager.Instance.playerTransform;
         minPosX = playerT.position.x;
         isPacificMap = GameManager.Instance.isPacificLevel;
-        minCameraLimitX = -999f;
-        maxCameraLimitX = 999f;
     }
 
     private void Update()
@@ -54,12 +52,12 @@ public class CameraController : MonoBehaviour
 
     public void SetBattleMode(bool battleON)
     {
-        minCameraLimitX = transform.position.x - backDistanceMax;
-        maxCameraLimitX = transform.position.x + backDistanceMax;
         battleMode = battleON;
         if (battleON)
         {
             finalValue = 0f;
+            minCameraLimitX = transform.position.x - backDistanceMax;
+            maxCameraLimitX = transform.position.x + backDistanceMax;
             GetMapPosValues();
         }
         else finalValue = 9f;

@@ -72,9 +72,8 @@ public class EquipManager : MonoBehaviour
         }
     }
 
-    public void SetRandomEquipment(Character character)
+    void Equip(Character character, List<Sprite> skinSpriteList)
     {
-        List<Sprite> skinSpriteList = GetRandomSkin();
         float colorValue = Random.Range(100f, 255f);
         Color skinColor = new Color(colorValue, colorValue, colorValue, 255f);
         SetSkinColor(character, skinColor);
@@ -95,6 +94,19 @@ public class EquipManager : MonoBehaviour
         character.EarsRenderer.color = skinColor;
         character.Eyes = GetOneRandom(eyeList, 1);
         character.Initialize();
+    }
+
+    public void SetEquipment(Character character, string equipName)
+    {
+        List<Sprite> skinSpriteList = dicSkins[equipName];
+        Equip(character, skinSpriteList);
+    }
+
+    public void SetRandomEquipment(Character character)
+    {
+        List<Sprite> skinSpriteList = GetRandomSkin();
+        Equip(character, skinSpriteList);
+
     }
 
     private Sprite GetOneRandom(List<Sprite> spriteList)

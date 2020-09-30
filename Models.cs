@@ -4,6 +4,13 @@ using UnityEngine;
 using Assets.FantasyHeroes.Scripts;
 
 [Serializable]
+public struct SellableWeapon
+{
+    public int price;
+    public string weaponName;
+}
+
+[Serializable]
 public struct Item
 {
     public Sprite sprite;
@@ -56,7 +63,7 @@ public abstract class Entity
     float lastTimeAttackCombo = 0f;
     float lastTimeAttackHit = 0f;
     float dashCD = 0.5f;
-    float attackCD = 0.6f;
+    float attackCD = 0.66f;
 
     public bool isPlayer = false;
 
@@ -135,7 +142,7 @@ public abstract class Entity
             comboCounter++;
             lastTimeAttackHitWhenCombo = lastTimeAttackHit;
             lastTimeAttackCombo = lastTimeAttack = Time.time;
-            SlashAttack(attackDir, 0.2f);
+            SlashAttack(attackDir, 0.366f);
             PlayAnim(comboCounter % 2 == 0 ? "Attack" : "AttackCombo");
         }
         else if (comboCounter > 0)
@@ -422,7 +429,8 @@ public abstract class Entity
 [Serializable]
 public class Player : Entity
 {
-    public Player(Transform transform, Stats stats, Weapon weapon, string name)
+    bool playerClampX = false;
+    public Player(Transform transform, Stats stats, Weapon weapon, string name, bool playerClampX)
     {
         this.transform = transform;
         this.stats = stats;
@@ -439,6 +447,7 @@ public class Player : Entity
         if (GameManager.Instance.isPacificLevel) this.character.isActive = false;
         this.status = Status.Alive;
         this.isPlayer = true;
+        this.playerClampX = playerClampX;
     }
 
     public override void Die()
@@ -452,7 +461,7 @@ public class Player : Entity
 
     public override void Update()
     {
-        if (isActive) ClampMyself(true, true);
+        if (isActive) ClampMyself(playerClampX, true);
     }
 
     float inmuneTimeAfterDash = 0.2f;

@@ -41,6 +41,9 @@ public class GameManager : MonoBehaviour
     public GameObject barrelPrefab, breakingBarrelPrefab, bombPrefab, bombEffectPrefab, shootPrefab, hitPrefab;
     public EZObjectPool breakingBarrelsPool, bulletsPool, bombsPool, hitsPool, barrelsPool;
 
+    public Transform respawnTransform;
+    public bool playerClampX = false;
+
     [HideInInspector]
     public EZObjectPool bombEffectPool;
 
@@ -106,7 +109,7 @@ public class GameManager : MonoBehaviour
         enemiesKilledThisRound = 0;
         CameraController.Instance.SetBattleMode(!CameraController.Instance.battleMode);
         Camera mainCamera = Camera.main;
-        StartCoroutine(MrSpawner(enemySpawnAmount, () =>
+        StartCoroutine(MrSpawnerRandoms(enemySpawnAmount, () =>
         {
             EnemiesManager.Instance.SetActionForAllEnemies();
         }));
@@ -120,11 +123,11 @@ public class GameManager : MonoBehaviour
         CameraController.Instance.SetBattleMode(false);
     }
 
-    public IEnumerator MrSpawner(int amount, Action onEnded)
+    public IEnumerator MrSpawnerRandoms(int amount, Action onEnded)
     {
         for (var x = 0; x < enemySpawnAmount; x++)
         {
-            SpawnEnemy(x + 1);
+            SpawnEnemyRandom(x + 1);
             yield return new WaitForEndOfFrame();
         }
         onEnded.Invoke();
@@ -209,7 +212,7 @@ public class GameManager : MonoBehaviour
         return enemyCounter + 1 < enemies.Length ? enemyCounter++ : 0;
     }
 
-    public void SpawnEnemy(int enemyNumber)
+    public void SpawnEnemyRandom(int enemyNumber)
     {
         bool spawnOnLeft = UnityEngine.Random.Range(0, 20) < 1 ? true : false;
         if (spawnOnLeft) enemyNumber++;
@@ -236,7 +239,37 @@ public class GameManager : MonoBehaviour
         }
 
         Stats randomStats = basicEnemyStats;
-        randomStats.velocity = UnityEngine.Random.Range(1, 3);
+        randomStats.velocity = UnityEngine.Random.Range(0, 100) > 80 ? 2 : 1;
+        randomStats.life = UnityEngine.Random.Range(60, 360);
+        enemy.Spawn(finalPos, randomStats);
+        EquipManager.Instance.SetRandomEquipment(enemy.character);
+        cullingManager?.SetSphere(enemy.ID, finalPos);
+    }
+
+    public void SpawnEnemy(int enemyNumber, string equipName)
+    {
+        bool spawnOnLeft = false;
+        if (spawnOnLeft) enemyNumber++;
+        var mainCamera = Camera.main;
+        var finalPos = new Vector3(
+                spawnOnLeft ?
+                CameraController.Instance.maxDistanceLeft - enemyNumber - UnityEngine.Random.Range(0f, 1f) :
+                CameraController.Instance.maxDistanceRight + enemyNumber + UnityEngine.Random.Range(0f, 1f),
+                UnityEngine.Random.Range(minY, maxY),
+                0
+        );
+
+        int enemyID = GetNextEnemyID();
+        Enemy enemy = enemies[enemyID];
+
+        if (enemy.status == Status.Alive)
+        {
+            enemy = enemies.ToList().Find(e => e.status == Status.Dead);
+        }
+
+        Stats randomStats = basicEnemyStats;
+        randomStats.velocity = UnityEngine.Random.Range(0, 100) > 80 ? 2 : 1;
+        randomStats.life = UnityEngine.Random.Range(60, 360);
         enemy.Spawn(finalPos, randomStats);
         EquipManager.Instance.SetRandomEquipment(enemy.character);
         cullingManager?.SetSphere(enemy.ID, finalPos);
@@ -244,16 +277,19 @@ public class GameManager : MonoBehaviour
 
     private void SpawnPlayer(string playerName)
     {
-        playerTransform = Instantiate(playerGO, new Vector3(1.13f, -0.47f, 0), transform.rotation).transform;
+        Vector3 respawnPosition = respawnTransform ? respawnTransform.position : new Vector3(1.13f, -0.47f, 0);
+        playerTransform = Instantiate(playerGO, respawnPosition, transform.rotation).transform;
 
         Player newPlayer = new Player(
             playerTransform,
             new Stats() { life = 100, strength = 50, velocity = 2 },
             tableWeapons.common[0],
-            playerName
+            playerName,
+            playerClampX
         );
         player = newPlayer;
         playerTransform.name = playerName;
+        player.transform.position = respawnPosition;
         gameIsActive = true;
     }
 
