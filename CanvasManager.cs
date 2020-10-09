@@ -24,6 +24,8 @@ public class CanvasManager : MonoBehaviour
     public Image fadeImage;
     float fadeVelocity;
 
+    public Transform shop;
+
     private void Awake()
     {
         if (Instance != null) Destroy(this);
@@ -180,6 +182,18 @@ public class CanvasManager : MonoBehaviour
         if (active) ligthPuzzle.StartPuzzle();
         else ligthPuzzle.ExitPuzzle();
 
+    }
+
+    public void OpenShop()
+    {
+        GameManager.Instance.player.isActive = false;
+        shop.gameObject.SetActive(true);
+    }
+
+    public void CloseShop()
+    {
+        GameManager.Instance.player.isActive = true;
+        shop.gameObject.SetActive(false);
     }
 
 }
