@@ -21,23 +21,41 @@ public class LightPuzzle : MonoBehaviour
     List<ButtonPanel> buttons = new List<ButtonPanel>();
     public float speedChange = 2.5f;
     bool interactable = false;
+    public Animator doorAnimator;
 
-    private void OnDisable()
+    private void Awake()
     {
-        CanvasManager.Instance.AndroidControlsSetActive(true);
+        print("not even me");
+    }
+
+    private void Start()
+    {
+        if (GameManager.Instance.db.CheckKey("LightPuzzle")) doorAnimator.Play("LightDoorOpen");
+    }
+
+    public void StartPuzzle()
+    {
+        CanvasManager.Instance.MobileControlsSetActive(false);
+        interactable = true;
+        if (buttons.Count == 0) InitializeButtons();
+        transform.GetChild(0).gameObject.SetActive(true);
+    }
+
+    public void ExitPuzzle()
+    {
+        transform.GetChild(0).gameObject.SetActive(false);
+        CanvasManager.Instance.MobileControlsSetActive(true);
     }
 
     private void OnEnable()
     {
-        CanvasManager.Instance.AndroidControlsSetActive(false);
-        interactable = true;
-        if (buttons.Count == 0) InitializeButtons();
+
     }
 
     private void InitializeButtons()
     {
         byte counter = 0;
-        foreach (Transform t in transform.Find("Buttons"))
+        foreach (Transform t in transform.GetChild(0).Find("Buttons"))
         {
             ButtonPanel newButtonPanel = new ButtonPanel()
             {
@@ -91,9 +109,9 @@ public class LightPuzzle : MonoBehaviour
 
     private void Win()
     {
+        GameManager.Instance.db.SetKey("LightPuzzle", 1);
         CanvasManager.Instance.LightPuzzleSetActive(false);
-        SetRandomStatusButtons();
-        print("¡Has ganado!");
+        doorAnimator.Play("LightDoorOpen");
     }
 
     ButtonPosition GetButtonPositionByIndex(int button_index)

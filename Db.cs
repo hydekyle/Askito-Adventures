@@ -79,6 +79,16 @@ public class Db
         }
     }
 
+    public void SetKey(string keyName, int value)
+    {
+        PlayerPrefs.SetInt(keyName, value);
+    }
+
+    public bool CheckKey(string keyName)
+    {
+        return PlayerPrefs.GetInt(keyName) == 1;
+    }
+
     public int GetSouls()
     {
         return PlayerPrefs.GetInt("Souls", 0);

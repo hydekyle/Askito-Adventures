@@ -16,7 +16,7 @@ public class CanvasManager : MonoBehaviour
     public AudioMixer audioMixer;
     public GameObject retryGO;
     Button retryButton;
-    public GameObject ligthPuzzleGO;
+    public LightPuzzle ligthPuzzle;
     public Healthbar healthbar;
 
     public Image avatarTweeter;
@@ -112,8 +112,9 @@ public class CanvasManager : MonoBehaviour
         messageText.text = msg;
     }
 
-    public void AndroidControlsSetActive(bool active)
+    public void MobileControlsSetActive(bool active)
     {
+        if (!Application.isMobilePlatform) return;
         androidControls.SetActive(active);
     }
 
@@ -126,7 +127,7 @@ public class CanvasManager : MonoBehaviour
         }
 
         menuOptions.SetActive(active);
-        AndroidControlsSetActive(!active);
+        MobileControlsSetActive(!active);
     }
 
     public void OnMusicValueChanged()
@@ -167,9 +168,18 @@ public class CanvasManager : MonoBehaviour
         GameManager.Instance.LoadNewScene("House");
     }
 
+    public void StartLightPuzzle()
+    {
+        if (GameManager.Instance.db.CheckKey("LightPuzzle")) return;
+        LightPuzzleSetActive(true);
+    }
+
     public void LightPuzzleSetActive(bool active)
     {
-        ligthPuzzleGO.SetActive(active);
+        GameManager.Instance.player.isActive = !active;
+        if (active) ligthPuzzle.StartPuzzle();
+        else ligthPuzzle.ExitPuzzle();
+
     }
 
 }

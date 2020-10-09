@@ -75,14 +75,18 @@ public class GameManager : MonoBehaviour
 
     private void Initialize()
     {
+        if (!Application.isEditor) Debug.unityLogger.logEnabled = false; // Evita consumo de CPU de los Debug.Log
+
         //admob = new AdmobManager();
         db = new Db();
+
         if (!isPacificLevel)
         {
             GeneratePools();
             SetMapSpriteOrders();
             AllocateEnemies();
         }
+
         SpawnPlayer("Player");
 
         SceneManager.sceneLoaded += OnSceneLoaded;
@@ -646,5 +650,10 @@ public class GameManager : MonoBehaviour
             }
             //else if (Input.GetButtonDown("Fire3")) player.ShootWeapon();
         }
+
+#if UNITY_EDITOR
+        if (Input.GetKeyDown(KeyCode.F8)) PlayerPrefs.DeleteAll();
+#endif
+
     }
 }

@@ -461,7 +461,7 @@ public class Player : Entity
 
     public override void Update()
     {
-        if (isActive) ClampMyself(playerClampX, true);
+        ClampMyself(playerClampX, true);
     }
 
     float inmuneTimeAfterDash = 0.2f;
