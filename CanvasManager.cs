@@ -187,6 +187,7 @@ public class CanvasManager : MonoBehaviour
     public void OpenShop()
     {
         GameManager.Instance.player.isActive = false;
+        GameManager.Instance.player.Idle();
         shop.gameObject.SetActive(true);
     }
 
